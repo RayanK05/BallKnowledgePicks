@@ -1,17 +1,17 @@
 TRUNCATE notifications, user_followed_teams, group_members, groups,
          predictions, games, teams, users RESTART IDENTITY CASCADE;
 
-INSERT INTO users (user_id, username, email, user_score) VALUES
-    (1,  'James Wilson',      'james.wilson@example.com',      20),
-    (2,  'Michael Johnson',   'michael.johnson@example.com',   10),
-    (3,  'Daniel Thompson',   'daniel.thompson@example.com',   20),
-    (4,  'Christopher Brown', 'christopher.brown@example.com', 10),
-    (5,  'Matthew Davis',     'matthew.davis@example.com',      0),
-    (6,  'Anthony Martinez',  'anthony.martinez@example.com',  10),
-    (7,  'Ryan Anderson',     'ryan.anderson@example.com',      0),
-    (8,  'Brandon Taylor',    'brandon.taylor@example.com',     0),
-    (9,  'Kevin Robinson',    'kevin.robinson@example.com',     0),
-    (10, 'Nathan Walker',     'nathan.walker@example.com',      0);
+INSERT INTO users (user_id, username, email, user_score, role, password_hash) VALUES
+    (1,  'James Wilson',      'james.wilson@example.com',      20, 'user', '$2b$10$cJbQUXlEbAYyB45NXmBkku/nEw43SUIeClzBaNBo6WrMJyIitRyWi'),
+    (2,  'Michael Johnson',   'michael.johnson@example.com',   10, 'user', '$2b$10$cJbQUXlEbAYyB45NXmBkku/nEw43SUIeClzBaNBo6WrMJyIitRyWi'),
+    (3,  'Daniel Thompson',   'daniel.thompson@example.com',   20, 'user', '$2b$10$cJbQUXlEbAYyB45NXmBkku/nEw43SUIeClzBaNBo6WrMJyIitRyWi'),
+    (4,  'Christopher Brown', 'christopher.brown@example.com', 10, 'user', '$2b$10$cJbQUXlEbAYyB45NXmBkku/nEw43SUIeClzBaNBo6WrMJyIitRyWi'),
+    (5,  'Matthew Davis',     'matthew.davis@example.com',      0, 'user', '$2b$10$cJbQUXlEbAYyB45NXmBkku/nEw43SUIeClzBaNBo6WrMJyIitRyWi'),
+    (6,  'Anthony Martinez',  'anthony.martinez@example.com',  10, 'user', '$2b$10$cJbQUXlEbAYyB45NXmBkku/nEw43SUIeClzBaNBo6WrMJyIitRyWi'),
+    (7,  'Ryan Anderson',     'ryan.anderson@example.com',      0, 'user', '$2b$10$cJbQUXlEbAYyB45NXmBkku/nEw43SUIeClzBaNBo6WrMJyIitRyWi'),
+    (8,  'Brandon Taylor',    'brandon.taylor@example.com',     0, 'user', '$2b$10$cJbQUXlEbAYyB45NXmBkku/nEw43SUIeClzBaNBo6WrMJyIitRyWi'),
+    (9,  'Kevin Robinson',    'kevin.robinson@example.com',     0, 'user', '$2b$10$cJbQUXlEbAYyB45NXmBkku/nEw43SUIeClzBaNBo6WrMJyIitRyWi'),
+    (10, 'Nathan Walker',     'nathan.walker@example.com',      0, 'user', '$2b$10$cJbQUXlEbAYyB45NXmBkku/nEw43SUIeClzBaNBo6WrMJyIitRyWi');
 
 INSERT INTO teams (team_id, team_name) VALUES
     (1,  'Toronto Raptors'),

@@ -6,6 +6,9 @@ CREATE TABLE USERS (
     username	VARCHAR(30) 	NOT NULL UNIQUE,
     email 	VARCHAR(255) 	NOT NULL UNIQUE,
     user_score 	INT NOT NULL 	DEFAULT 0 CHECK (user_score >= 0),
+    role     VARCHAR(20) 	NOT NULL DEFAULT 'user',
+    password_hash VARCHAR(255) NOT NULL,
+    CONSTRAINT 	chk_user_roles CHECK (role IN ('user', 'admin', 'guest')),
     CONSTRAINT 	chk_users_email CHECK (email LIKE '%_@_%._%')
 );
 
