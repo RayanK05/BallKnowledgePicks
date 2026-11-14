@@ -1,12 +1,12 @@
 const express = require('express');
-const db = require('./db');            // ← new: the database connection
+const db = require('./db');           
 const app = express();
 
 app.get('/api/hello', (req, res) => {
   res.json({ message: 'Hello from Ball Knowledge Picks!' });
 });
 
-// ← new: checks that Express can reach PostgreSQL
+
 app.get('/api/health', async (req, res) => {
   try {
     const result = await db.query('SELECT COUNT(*) FROM users');
