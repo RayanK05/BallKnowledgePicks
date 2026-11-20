@@ -1,11 +1,14 @@
 import { useState } from 'react'
+import Login from './components/login'
+import Register from './components/register'
 
 function App() {
   
   return (
     <>
       <div>
-        <h1>Ball Knowledge Picks</h1>
+        <Login />
+        <Register />
       </div>
     </>
   )

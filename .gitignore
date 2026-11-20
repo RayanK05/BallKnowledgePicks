@@ -3,3 +3,7 @@ node_modules/
 .env
 
 client/dist/
+
+database/query_results/
+
+server/scratch/
