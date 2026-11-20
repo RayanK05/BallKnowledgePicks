@@ -23,7 +23,27 @@ INSERT INTO teams (team_id, team_name) VALUES
     (7,  'Oklahoma City Thunder'),
     (8,  'Milwaukee Bucks'),
     (9,  'Denver Nuggets'),
-    (10, 'Dallas Mavericks');
+    (10, 'Dallas Mavericks'),
+    (11, 'Atlanta Hawks'),
+    (12, 'Brooklyn Nets'),
+    (13, 'Charlotte Hornets'),
+    (14, 'Chicago Bulls'),
+    (15, 'Cleveland Cavaliers'),
+    (16, 'Detroit Pistons'),
+    (17, 'Houston Rockets'),
+    (18, 'Indiana Pacers'),
+    (19, 'LA Clippers'),
+    (20, 'Memphis Grizzlies'),
+    (21, 'Minnesota Timberwolves'),
+    (22, 'New Orleans Pelicans'),
+    (23, 'Orlando Magic'),
+    (24, 'Philadelphia 76ers'),
+    (25, 'Phoenix Suns'),
+    (26, 'Portland Trail Blazers'),
+    (27, 'Sacramento Kings'),
+    (28, 'San Antonio Spurs'),
+    (29, 'Utah Jazz'),
+    (30, 'Washington Wizards');
 
 INSERT INTO games (game_id, home_team_id, away_team_id, game_date, winner_id, home_score, away_score) VALUES
     (1,  1,  2,  '2026-10-20', 1,  115, 102),
