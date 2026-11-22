@@ -1,60 +1,73 @@
-import React from 'react'
-import { useState } from 'react'
+import React from "react";
+import { useState } from "react";
+import TextInput from "./ui/TextInput.jsx";
+import PasswordInput from "./ui/PasswordInput.jsx";
+import styles from "./Login.module.css";
 
 const Register = () => {
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [message, setMessage] = useState('');
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
 
-    async function handleSubmit(e) {
-    e.preventDefault();          
+  async function handleSubmit(e) {
+    e.preventDefault();
 
-    const res = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password }),
+    if (!email || !password) {
+      setMessage("Please enter your email and password");
+      return;
+    }
+
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, email, password }),
     });
 
     const data = await res.json();
 
     if (data.ok) {
-        setMessage(`You have registered, ${data.user.username} with email ${data.user.email}!`);
+      setMessage(`You have registered, ${data.user.username} with email ${data.user.email}!`);
     } else {
-        setMessage(data.error);
+      setMessage(data.error);
     }
-    }
+  }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Register</h2>
-
-      <input
-        type="text"
-        placeholder="Username"
+    <form onSubmit={handleSubmit} className={styles.form}>
+      <TextInput
+        id="username"
+        label="Username"
         value={username}
-        onChange={(e) => setUsername(e.target.value)}
+        onChange={setUsername}
+        placeholder="e.g. JohnDoe1"
+        autoComplette="username"
       />
 
-      <input
-        type="email"
-        placeholder="Email"
+      <TextInput
+        id="email"
+        label="Email Address"
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        onChange={setEmail}
+        placeholder="e.g. John.Doe@mail.com"
+        autoComplette="email"
       />
 
-      <input
-        type="password"
-        placeholder="Password"
+      <PasswordInput
+        id="password"
+        label="Password "
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        onChange={setPassword}
+        placeholder="Enter password"
       />
 
-      <button type="submit">Register</button>
+      <button type="submit" className={styles.submit}>
+        Register
+      </button>
 
       <p>{message}</p>
     </form>
-  )
-}
+  );
+};
 
-export default resgister
+export default Register;

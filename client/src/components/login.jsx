@@ -1,16 +1,24 @@
-import { useState } from 'react';
+import { useState } from "react";
+import TextInput from "./ui/TextInput.jsx";
+import PasswordInput from "./ui/PasswordInput.jsx";
+import styles from "./Login.module.css";
 
 function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
 
   async function handleSubmit(e) {
-    e.preventDefault();          
+    e.preventDefault();
 
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    if (!email || !password) {
+      setMessage("Please enter your email and password");
+      return;
+    }
+
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
 
@@ -24,28 +32,33 @@ function Login() {
   }
 
   return (
-<form onSubmit={handleSubmit}>
-      <h1>Ball Knowledge Picks</h1>
-
-      <input
+    <form onSubmit={handleSubmit} className={styles.form} noValidate>
+      <TextInput
+        id="email"
+        label="Email"
         type="email"
-        placeholder="Email"
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        onChange={setEmail}
+        placeholder="you@school.edu"
+        autoComplete="email"
       />
 
-      <input
-        type="password"
-        placeholder="Password"
+      <PasswordInput
+        id="password"
+        label="Password"
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        onChange={setPassword}
+        placeholder="Enter your password"
+        autoComplete="current-password"
       />
 
-      <button type="submit">Log in</button>
+      <button type="submit" className={styles.submit}>
+        Log in
+      </button>
 
-      <p>{message}</p>
+      {message && <p>{message}</p>}
     </form>
   );
 }
 
-export default Login;    
+export default Login;
