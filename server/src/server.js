@@ -187,6 +187,175 @@ app.get('/api/followData', authenticateToken, async (req, res) => {
   }
 });
 
+app.patch('/api/notification', authenticateToken, async (req, res) => {
+  try{
+    const user_id = req.user.user_id;
+    const { team_id } = req.body;
+
+    const result = await db.query(
+      `UPDATE USER_FOLLOWED_TEAMS
+       SET notifications_on = NOT notifications_on
+       WHERE user_id = $1 AND team_id = $2
+       RETURNING notifications_on`,
+      [user_id, team_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        message: 'You are not following this team.'
+      });
+    }
+
+    return res.json({
+      ok: true,
+      notifications_on: result.rows[0].notifications_on
+    });
+    
+  }catch(err){
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.patch('/api/notification', authenticateToken, async (req, res) => {
+  try{
+    const user_id = req.user.user_id;
+    const { team_id } = req.body;
+
+    const result = await db.query(
+      `UPDATE USER_FOLLOWED_TEAMS
+       SET notifications_on = NOT notifications_on
+       WHERE user_id = $1 AND team_id = $2
+       RETURNING notifications_on`,
+      [user_id, team_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        message: 'You are not following this team.'
+      });
+    }
+
+    return res.json({
+      ok: true,
+      notifications_on: result.rows[0].notifications_on
+    });
+    
+  }catch(err){
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/joinGroup', authenticateToken, async (req, res) => {
+  try{
+    const user_id = req.user.user_id;
+    const { team_id } = req.body;
+
+    const result = await db.query(
+      ``,
+      [user_id, team_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        message: 'You are not following this team.'
+      });
+    }
+
+    return res.json({
+      ok: true,
+      notifications_on: result.rows[0].notifications_on
+    });
+    
+  }catch(err){
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/leaveGroup', authenticateToken, async (req, res) => {
+  try{
+    const user_id = req.user.user_id;
+    const { team_id } = req.body;
+
+    const result = await db.query(
+      ``,
+      [user_id, team_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        message: 'You are not following this team.'
+      });
+    }
+
+    return res.json({
+      ok: true,
+      notifications_on: result.rows[0].notifications_on
+    });
+    
+  }catch(err){
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/createGroup', authenticateToken, async (req, res) => {
+  try{
+    const user_id = req.user.user_id;
+    const { team_id } = req.body;
+
+    const result = await db.query(
+      ``,
+      [user_id, team_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        message: 'You are not following this team.'
+      });
+    }
+
+    return res.json({
+      ok: true,
+      notifications_on: result.rows[0].notifications_on
+    });
+    
+  }catch(err){
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/deleteGroup', authenticateToken, async (req, res) => {
+  try{
+    const user_id = req.user.user_id;
+    const { team_id } = req.body;
+
+    const result = await db.query(
+      ``,
+      [user_id, team_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        message: 'You are not following this team.'
+      });
+    }
+
+    return res.json({
+      ok: true,
+      notifications_on: result.rows[0].notifications_on
+    });
+    
+  }catch(err){
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+
 
 
 app.listen(3000, () => console.log('Running on http://localhost:3000'));

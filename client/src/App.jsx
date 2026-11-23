@@ -10,6 +10,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import { useNavigate } from 'react-router-dom';
 
 function App() {// for report provide the db code allongside a result
+  const isAuthenticated = localStorage.getItem('token');
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -17,18 +18,22 @@ function App() {// for report provide the db code allongside a result
       localStorage.removeItem('user');
       navigate('/Login');
   };
-  
+
   return (
     <>
-      <nav>
-        <Link to="/">Home</Link> | 
-        <Link to="/Teams">Teams</Link> | 
-        <Link to="/Groups">Groups</Link> |
-        <button onClick={handleLogout}>
-          Logout
-        </button>
-      </nav>
-
+      {isAuthenticated && (
+        <>
+          <nav>
+            <Link to="/">Home</Link> | 
+            <Link to="/Teams">Teams</Link> | 
+            <Link to="/Groups">Groups</Link> |
+            <button onClick={handleLogout}>
+              Logout
+            </button>
+          </nav>
+        </>
+      )}
+  
       <Routes>
           {/* Public routes */}
           <Route path="/Login" element={<Login />} />
@@ -36,6 +41,7 @@ function App() {// for report provide the db code allongside a result
 
           {/* Protected routes */}
           <Route element={<ProtectedRoute />}>
+          
               <Route path="/" element={<Home />} />
               <Route path="/Teams" element={<Teams />} />
               <Route path="/Groups" element={<Groups />} />
