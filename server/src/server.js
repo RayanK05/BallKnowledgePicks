@@ -11,6 +11,9 @@ const BASE = "https://api.balldontlie.io/v1";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const season = 2026;
 
+const predictionsRouter = require('./routes/predictions');
+app.use('/api', predictionsRouter);
+
 app.get('/api/hello', (req, res) => {
   res.json({ message: 'Hello from Ball Knowledge Picks!' });
 });
@@ -188,5 +191,20 @@ app.get('/api/followData', authenticateToken, async (req, res) => {
 });
 
 
+
+app.get("/api/me", authenticateToken, async (req, res) => {
+  try {
+    const result = await db.query(
+      "SELECT user_id, username, email, role, user_score FROM USERS WHERE user_id = $1",
+      [req.user.user_id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ ok: false, error: "User not found" });
+    }
+    res.json({ ok: true, user: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
 
 app.listen(3000, () => console.log('Running on http://localhost:3000'));
