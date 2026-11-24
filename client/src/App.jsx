@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import StatsPage from './pages/StatsPage'
 
 function App() {

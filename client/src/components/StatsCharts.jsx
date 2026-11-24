@@ -1,7 +1,7 @@
 // The two Chart.js charts from the design: accuracy by user (vertical bars)
 // and most-followed teams (horizontal bars). Colors come from the team's CSS
 // tokens (--accent, --border-strong, ...) so they follow the app theme.
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Chart as ChartJS,
   BarElement,
@@ -21,20 +21,21 @@ const FALLBACK = {
   text: '#161415',
 };
 
-// Reads the theme tokens once the page is mounted.
+// Reads the theme tokens (defined on :root) once, on the first render.
+function readThemeColors() {
+  const s = getComputedStyle(document.documentElement);
+  const get = (name, fb) => s.getPropertyValue(name).trim() || fb;
+  return {
+    accent: get('--accent', FALLBACK.accent),
+    bar: get('--border-strong', FALLBACK.bar),
+    grid: get('--border', FALLBACK.grid),
+    muted: get('--muted', FALLBACK.muted),
+    text: get('--text', FALLBACK.text),
+  };
+}
+
 function useThemeColors() {
-  const [c, setC] = useState(FALLBACK);
-  useEffect(() => {
-    const s = getComputedStyle(document.querySelector('.stats-page') || document.documentElement);
-    const get = (name, fb) => s.getPropertyValue(name).trim() || fb;
-    setC({
-      accent: get('--accent', FALLBACK.accent),
-      bar: get('--border-strong', FALLBACK.bar),
-      grid: get('--border', FALLBACK.grid),
-      muted: get('--muted', FALLBACK.muted),
-      text: get('--text', FALLBACK.text),
-    });
-  }, []);
+  const [c] = useState(readThemeColors);
   return c;
 }
 

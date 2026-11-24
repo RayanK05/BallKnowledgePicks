@@ -1,6 +1,6 @@
 // Generic table for any database view (".table-box > .table" from the design).
 
-export function prettyHeader(col) {
+function prettyHeader(col) {
   return col
     .split('_')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))

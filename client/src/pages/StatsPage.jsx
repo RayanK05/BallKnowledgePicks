@@ -190,8 +190,6 @@ function ViewsSection({ me }) {
   useEffect(() => {
     if (!selected) return;
     const ctrl = new AbortController();
-    setData(null);
-    setError('');
     getJson(`${API}/views/${selected}`, ctrl.signal)
       .then(setData)
       .catch((e) => !isAbort(e) && setError(e.message));
@@ -210,7 +208,11 @@ function ViewsSection({ me }) {
         <div className="view-picker">
           <label htmlFor="dv-pick" className="label">View</label>
           <span className="sel">
-            <select id="dv-pick" className="input" value={selected} onChange={(e) => setSelected(e.target.value)}>
+            <select id="dv-pick" className="input" value={selected} onChange={(e) => {
+              setSelected(e.target.value);
+              setData(null);
+              setError('');
+            }}>
               {views.map((v) => (
                 <option key={v.key} value={v.key}>{v.title}</option>
               ))}
