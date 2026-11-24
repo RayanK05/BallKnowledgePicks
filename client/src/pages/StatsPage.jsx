@@ -251,8 +251,15 @@ export default function StatsPage() {
   const [me, setMe] = useState(null); // null = guest
 
   useEffect(() => {
-    // /api/me is Rayan's route; a 401 just means we're a guest.
-    fetch('/api/me', { credentials: 'include' })
+    // /api/me needs the JWT saved at login. No token, or a 401/403, means guest.
+    let token = null;
+    try {
+      token = localStorage.getItem('token');
+    } catch {
+      // storage blocked: treat as guest
+    }
+    if (!token) return;
+    fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         const u = d && (d.user ?? d);

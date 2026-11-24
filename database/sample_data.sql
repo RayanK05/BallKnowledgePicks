@@ -13,17 +13,37 @@ INSERT INTO users (username, email, user_score, role, password_hash) VALUES
     ('Kevin Robinson',    'kevin.robinson@example.com',     0, 'user', '$2b$10$cJbQUXlEbAYyB45NXmBkku/nEw43SUIeClzBaNBo6WrMJyIitRyWi'),
     ('Nathan Walker',     'nathan.walker@example.com',      0, 'user', '$2b$10$cJbQUXlEbAYyB45NXmBkku/nEw43SUIeClzBaNBo6WrMJyIitRyWi');
 
-INSERT INTO teams (team_name) VALUES
-    ( 'Toronto Raptors'),
-    (  'Los Angeles Lakers'),
-    ( 'Boston Celtics'),
-    ( 'Golden State Warriors'),
-    ( 'New York Knicks'),
-    ( 'Miami Heat'),
-    ( 'Oklahoma City Thunder'),
-    ( 'Milwaukee Bucks'),
-    ( 'Denver Nuggets'),
-    ( 'Dallas Mavericks');
+INSERT INTO teams (team_id, team_name) VALUES
+    (1,  'Atlanta Hawks'),
+    (2,  'Boston Celtics'),
+    (3,  'Brooklyn Nets'),
+    (4,  'Charlotte Hornets'),
+    (5,  'Chicago Bulls'),
+    (6,  'Cleveland Cavaliers'),
+    (7,  'Dallas Mavericks'),
+    (8,  'Denver Nuggets'),
+    (9,  'Detroit Pistons'),
+    (10, 'Golden State Warriors'),
+    (11, 'Houston Rockets'),
+    (12, 'Indiana Pacers'),
+    (13, 'LA Clippers'),
+    (14, 'Los Angeles Lakers'),
+    (15, 'Memphis Grizzlies'),
+    (16, 'Miami Heat'),
+    (17, 'Milwaukee Bucks'),
+    (18, 'Minnesota Timberwolves'),
+    (19, 'New Orleans Pelicans'),
+    (20, 'New York Knicks'),
+    (21, 'Oklahoma City Thunder'),
+    (22, 'Orlando Magic'),
+    (23, 'Philadelphia 76ers'),
+    (24, 'Phoenix Suns'),
+    (25, 'Portland Trail Blazers'),
+    (26, 'Sacramento Kings'),
+    (27, 'San Antonio Spurs'),
+    (28, 'Toronto Raptors'),
+    (29, 'Utah Jazz'),
+    (30, 'Washington Wizards');
 
 INSERT INTO games ( home_team_id, away_team_id, game_date, winner_id, home_score, away_score) VALUES
     (  1,  2,  '2026-10-20', 1,  115, 102),

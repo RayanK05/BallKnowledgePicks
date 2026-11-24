@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com');
+
+/* ===== Design tokens: use these everywhere, never hardcode colours ===== */
+:root {
+  /* surfaces */
+  --bg: #121214;
+  --card: #1C1C1F;
+  --raised: #26262A;
+  --input-bg: var(--card);
+  --border: #2E2E33;
+  --border-strong: #43434A;
+
+  /* accent */
+  --accent: #FF4F00;
+  --accent-hover: #FF7F33;
+  --accent-soft: #3A2213;
+  --accent-line: rgba(242, 107, 29, 0.4);
+  --accent-glow: rgba(242, 107, 29, 0.14);
+  --on-accent: #121214;
+
+  /* text */
+  --text: #F4F4F5;
+  --muted: #A8A8B0;
+  --subtle: #85858F;
+  --placeholder: #8E8E97;
+
+  /* status */
+  --success: #3DD68C;
+  --success-bg: #10301F;
+  --danger: #FF6B6B;
+  --danger-bg: #3A1620;
+
+  /* shape + type */
+  --radius: 12px;
+  --font-body: 'Jost', system-ui, -apple-system, sans-serif;
+  --font-display: 'Jost', 'Jost', sans-serif;
+}
+
+/* ===== Reset ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* stop Chrome's autofill from painting inputs yellow */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text);
+  -webkit-box-shadow: 0 0 0 1000px var(--input-bg) inset;
+  transition: background-color 9999s;
+}
+
+/* ===== Shared classes ===== */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+}
+
+.error {
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.muted {
+  color: var(--muted);
+}
