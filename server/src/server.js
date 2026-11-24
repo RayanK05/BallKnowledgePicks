@@ -16,4 +16,6 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+app.use('/api/stats', require('./routes/stats'));
+
 app.listen(3000, () => console.log('Running on http://localhost:3000'));
