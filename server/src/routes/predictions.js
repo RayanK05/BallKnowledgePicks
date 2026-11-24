@@ -4,11 +4,40 @@ const authenticateToken = require('../authenticateToken')
 
 const router = express.Router();
 
+async function validatePick(game_id, predicted_winner_id) {
+  const game = await db.query(
+    'SELECT home_team_id, away_team_id, winner_id FROM games WHERE game_id = $1',
+    [game_id]
+  );
+
+  if (game.rows.length === 0) {
+    return { status: 404, error: 'Game not found' };
+  }
+
+  const g = game.rows[0];
+
+  if (g.winner_id !== null) {
+    return { status: 400, error: 'This game is already finished' };
+  }
+
+  if (predicted_winner_id !== g.home_team_id && predicted_winner_id !== g.away_team_id) {
+    return { status: 400, error: 'That team is not playing in this game' };
+  }
+
+  return null; // all good
+}
+
 router.post('/predictions', authenticateToken, async (req, res) => {
 
     try{
-        const user_id = req.user.user_id
-        const {game_id, predicted_winner_id } = req.body;
+      const user_id = req.user.user_id
+      const game_id = Number(req.body.game_id);
+      const predicted_winner_id = Number(req.body.predicted_winner_id);
+
+      const invalid = await validatePick(game_id, predicted_winner_id);
+      if (invalid) {
+        return res.status(invalid.status).json({ ok: false, error: invalid.error });
+      }
 
         const result = await db.query(
         `INSERT INTO PREDICTIONS (user_id, game_id, predicted_winner_id)
@@ -36,8 +65,13 @@ router.post('/predictions', authenticateToken, async (req, res) => {
 router.put('/predictions/:gameId', authenticateToken, async (req, res) => {
   try {
     const user_id = req.user.user_id;
-    const game_id = req.params.gameId;          // from the URL
-    const { predicted_winner_id } = req.body;
+    const game_id = Number(req.params.gameId);
+    const predicted_winner_id = Number(req.body.predicted_winner_id);
+
+    const invalid = await validatePick(game_id, predicted_winner_id);
+    if (invalid) {
+      return res.status(invalid.status).json({ ok: false, error: invalid.error });
+    }
 
     const result = await db.query(
       `UPDATE PREDICTIONS
@@ -84,6 +118,11 @@ router.delete('/predictions/:gameId', authenticateToken, async (req, res) => {
   try {
     const user_id = req.user.user_id;
     const game_id = req.params.gameId;
+    
+    const game = await db.query('SELECT winner_id FROM games WHERE game_id = $1', [game_id]);
+    if (game.rows.length > 0 && game.rows[0].winner_id !== null) {
+      return res.status(400).json({ ok: false, error: "Can't remove a pick after the game is finished" });
+    }
 
     const result = await db.query(
       `DELETE FROM PREDICTIONS
