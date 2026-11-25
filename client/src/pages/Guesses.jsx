@@ -21,22 +21,43 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "../api.js";
 import styles from "./Guesses.module.css";
 import GameCard from "../components/games/GameCard.jsx";
+import ScoreSummary from "../components/games/ScoreSummary.jsx";
+import FilterBar from "../components/games/FilterBar.jsx";
+import { gameStatus } from "../utils/games.js";
 
 const Guesses = () => {
   const [games, setGames] = useState([]);
   const [picks, setPicks] = useState([]);
-  const [tab, setTab] = useState("upcoming");
-  const [error, setError] = useState("");
+  // const [score, setScore] = useState(null);
+  const [teams, setTeams] = useState([]); // options for the team dropdown
+  const [team, setTeam] = useState(""); // selected team_id ("" = all)
+  const [stats, setStats] = useState(null);
+  const [status, setStatus] = useState("all");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
+  const shownGames = status === "all" ? games : games.filter((game) => gameStatus(game) === status);
 
   const loggedIn = !!localStorage.getItem("token");
 
   async function load() {
-    const gamesData = await apiFetch("/api/games");
+    const query = new URLSearchParams();
+    if (team) query.set("team", team);
+    if (from) query.set("from", from);
+    if (to) query.set("to", to);
+
+    const gamesData = await apiFetch(`/api/games?${query}`);
     setGames(gamesData.games || []);
 
     if (loggedIn) {
       const picksData = await apiFetch("/api/predictions");
       setPicks(picksData.predictions || []);
+
+      // const meData = await apiFetch("/api/me");
+      // if (meData.ok) setScore(meData.user.user_score);
+
+      const statsData = await apiFetch("/api/predictions/stats");
+      if (statsData.ok) setStats(statsData.stats);
     }
   }
 
@@ -49,8 +70,12 @@ const Guesses = () => {
   }
 
   useEffect(() => {
-    load();
+    apiFetch("/api/teams").then((data) => setTeams(data.teams || []));
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [team, from, to]);
 
   // CREATE a pick
   async function makePick(gameId, teamId) {
@@ -84,7 +109,7 @@ const Guesses = () => {
   //split games into tabs
   const upcomingGames = games.filter((g) => g.winner_id === null);
   const finishedGames = games.filter((g) => g.winner_id !== null).reverse(); // newest first
-  const shownGames = tab === "upcoming" ? upcomingGames : finishedGames;
+  //const shownGames = tab === "upcoming" ? upcomingGames : finishedGames;
 
   const pickedCount = upcomingGames.filter((g) =>
     picks.some((p) => p.game_id === g.game_id),
@@ -93,9 +118,21 @@ const Guesses = () => {
   return (
     <div className={styles.page}>
       <h1 className={styles.title}> Games & Pick'em ({games.length})</h1>
-
+      <h2 className={styles.subtitle}>Pick the winner before tipoff</h2>
+      {stats && <ScoreSummary stats={stats} />}
+      <FilterBar
+        teams={teams}
+        team={team}
+        onTeamChange={setTeam}
+        from={from}
+        onFromChange={setFrom}
+        to={to}
+        onToChange={setTo}
+        status={status}
+        onStatusChange={setStatus}
+      />
       <div className={styles.list}>
-        {games.map((game) => (
+        {shownGames.map((game) => (
           <GameCard
             key={game.game_id}
             game={game}

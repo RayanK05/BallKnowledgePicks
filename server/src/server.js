@@ -24,7 +24,7 @@ app.get("/api/hello", (req, res) => {
 app.get("/api/teams", async (req, res) => {
   try {
     const result = await db.query("SELECT team_id, team_name FROM teams ORDER BY team_name");
-    res.json({ ok: true, users: result.rows });
+    res.json({ ok: true, teams: result.rows });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
