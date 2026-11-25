@@ -9,7 +9,6 @@ function Teams(){
     const token = localStorage.getItem('token');
 
     //connect to the DB and pull the list of all the teams
-    const [message, setMessage] = useState("");
     const [teams, setTeams] = useState([]);
     const [loadStatus, setLoadedStatus] = useState("loading");
     const [following, setFollowing] = useState([]);
@@ -18,8 +17,7 @@ function Teams(){
     useEffect(() => {
       const load = async () => {
         try {
-          const [helloRes, teamsRes, followDataRes] = await Promise.all([
-            fetch("/api/hello"),
+          const [teamsRes, followDataRes] = await Promise.all([
             fetch("/api/teams"),
             fetch("/api/followData", {
               method: 'GET',
@@ -29,15 +27,13 @@ function Teams(){
             })
           ]);
 
-          if (!helloRes.ok || !teamsRes.ok || !followDataRes) {
+          if (!teamsRes.ok || !followDataRes) {
             throw new Error("Server returned an error");
           }
 
-          const helloData = await helloRes.json();
           const teamsData = await teamsRes.json();
           const followData = await followDataRes.json();
 
-          setMessage(helloData.message);
           setTeams(teamsData);
           setFollowing(followData);
 
@@ -119,7 +115,6 @@ function Teams(){
 
     return(
         <>
-            <div>Server test: {message}</div>
              <header className="page-header">
               <h1>TEAMS & NOTIFICATIONS</h1>
               <p>Follow teams to get game-day and final-score alerts.</p>
