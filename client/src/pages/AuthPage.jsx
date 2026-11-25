@@ -3,7 +3,7 @@ import { Clock, Trophy, Bell } from "lucide-react";
 import Login from "../components/login.jsx";
 import Register from "../components/register.jsx";
 import styles from "./AuthPage.module.css";
-import Logo from "../assets/Logo.png";
+import Logo from "../assets/logo2.svg";
 
 const features = [
   { icon: Clock, text: "Make your picks before tip-off" },
@@ -52,7 +52,6 @@ const AuthPage = () => {
             </li>
           ))}
         </ul>
-        <img src={Logo} className={styles.logo} alt="Description" />
       </div>
 
       <div className={styles.formSide}>
@@ -92,7 +91,10 @@ const AuthPage = () => {
             Continue as guest →
           </a>
           <p className={styles.guestHint}>Guests can view games but can't make picks.</p>
+          <img src={Logo} className={styles.logo} alt="Description" />
+
         </div>
+        
       </div>
     </div>
   );
