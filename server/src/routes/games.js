@@ -6,7 +6,7 @@ const router = express.Router();
 router.get("/games", async (req, res) => {
   try {
     const result = await db.query(`
-      SELECT g.game_id, g.game_date, g.home_score, g.away_score, g.winner_id,
+      SELECT g.game_id, g.game_date, g.tipoff, g.home_score, g.away_score, g.winner_id,
              g.home_team_id, ht.team_name AS home_team,
              g.away_team_id, at.team_name AS away_team
       FROM games g

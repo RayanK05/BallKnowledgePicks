@@ -4,13 +4,16 @@ import styles from "./GameCard.module.css";
 
 const GameCard = ({ game, myPick, onPick, onRemove }) => {
   const isFinished = game.winner_id !== null;
+  const isLive = !isFinished && game.tipoff !== null && new Date(game.tipoff) <= new Date();
 
   return (
     <div className={styles.card}>
       <div className={styles.info}>
-        <span className={styles.date}>{game.game_date.slice(0, 10)}</span>
+        <span className={styles.date}>
+          {game.tipoff ? new Date(game.tipoff).toLocaleString() : game.game_date.slice(0, 10)}
+        </span>
         <span className={`${styles.tag} ${isFinished ? styles.final : styles.upcoming}`}>
-          {isFinished ? "Final" : "Upcoming"}
+          {isFinished ? "Final" : isLive ? "Live" : "Upcoming"}
         </span>
       </div>
 
