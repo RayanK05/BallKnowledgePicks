@@ -6,6 +6,7 @@ import Groups from "./components/Groups";
 import Login from "./components/login";
 import Register from "./components/register";
 import AuthPage from "./pages/AuthPage";
+import Guesses from "./pages/Guesses";
 
 import ProtectedRoute from "./ProtectedRoute";
 import { useNavigate } from "react-router-dom";
@@ -23,7 +24,7 @@ function App() {
   return (
     <>
       <nav>
-        <Link to="/">Home</Link> |<Link to="/Teams">Teams</Link> |<Link to="/Groups">Groups</Link> |
+        <Link to="/">Home</Link> |<Link to="/Teams">Teams</Link> |<Link to="/Groups">Groups</Link> | <Link to="/Guesses">Guess</Link> | 
         <button onClick={handleLogout}>Logout</button>
       </nav>
 
@@ -37,6 +38,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/Teams" element={<Teams />} />
           <Route path="/Groups" element={<Groups />} />
+          <Route path="/Guesses" element={<Guesses/>}/>
         </Route>
 
         <Route path="*" element={<p>Page not found</p>} />
