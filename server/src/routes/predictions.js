@@ -107,7 +107,7 @@ router.get('/predictions', authenticateToken, async (req, res) => {
       [user_id]
     );
 
-    res.json({ ok: true, prediction: result.rows });
+    res.json({ ok: true, predictions: result.rows });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
