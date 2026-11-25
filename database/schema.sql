@@ -22,6 +22,7 @@ CREATE TABLE GAMES (
     home_team_id  INT     NOT NULL REFERENCES TEAMS(team_id),
     away_team_id  INT     NOT NULL REFERENCES TEAMS(team_id),
     game_date     DATE    NOT NULL,
+    tipoff        TIMESTAMPTZ,
     winner_id     INT     REFERENCES TEAMS(team_id),
     home_score    INT     CHECK (home_score >= 0),
     away_score    INT     CHECK (away_score >= 0),
