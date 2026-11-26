@@ -25,6 +25,13 @@ import ScoreSummary from "../components/games/ScoreSummary.jsx";
 import FilterBar from "../components/games/FilterBar.jsx";
 import { gameStatus } from "../utils/games.js";
 
+// a date N days from today, as "YYYY-MM-DD" (local time)
+function daysFromToday(n) {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return d.toLocaleDateString("en-CA");
+}
+
 const Guesses = () => {
   const [games, setGames] = useState([]);
   const [picks, setPicks] = useState([]);
@@ -33,11 +40,17 @@ const Guesses = () => {
   const [team, setTeam] = useState(""); // selected team_id ("" = all)
   const [stats, setStats] = useState(null);
   const [status, setStatus] = useState("all");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [from, setFrom] = useState(daysFromToday(-7));
+  const [to, setTo] = useState(daysFromToday(7));
+  const [pickFilter, setPickFilter] = useState("all"); // "all" | "picked" | "unpicked"
 
-  const shownGames = status === "all" ? games : games.filter((game) => gameStatus(game) === status);
-
+  const shownGames = games
+    .filter((game) => status === "all" || gameStatus(game) === status)
+    .filter((game) => {
+      if (pickFilter === "all") return true;
+      const picked = picks.some((p) => p.game_id === game.game_id);
+      return pickFilter === "picked" ? picked : !picked;
+    });
   const loggedIn = !!localStorage.getItem("token");
 
   async function load() {
@@ -130,6 +143,8 @@ const Guesses = () => {
         onToChange={setTo}
         status={status}
         onStatusChange={setStatus}
+        pickFilter={pickFilter}
+        onPickFilterChange={setPickFilter}
       />
       <div className={styles.list}>
         {shownGames.map((game) => (
