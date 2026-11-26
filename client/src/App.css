@@ -1,0 +1,162 @@
+/* ===== MAIN NAVIGATION ===== */
+
+.main-navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 18px 40px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    min-height: 76px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* ===== LOGO ===== */
+
+.nav-logo {
+    font-size: 23px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+    color: var(--text);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.nav-logo:hover {
+    color: var(--accent);
+}
+
+/* ===== NAVIGATION LINKS ===== */
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 10px 16px;
+    border-radius: 8px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.nav-links a:hover {
+    background: var(--raised);
+    color: var(--accent-text);
+}
+
+/* ===== USER SECTION ===== */
+
+.nav-user {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    white-space: nowrap;
+}
+
+.nav-user a {
+    color: var(--text);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 9px 16px;
+    border-radius: 8px;
+}
+
+.nav-user a:hover {
+    background: var(--raised);
+}
+
+.nav-user a[href="/Register"] {
+    background: var(--accent);
+    color: white;
+}
+
+.nav-user a[href="/Register"]:hover {
+    background: var(--accent-hover);
+}
+
+.nav-username {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+/* ===== NOTIFICATIONS ===== */
+
+.nav-notification {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--raised);
+    border: 1px solid var(--border);
+    min-width: 42px;
+    min-height: 42px;
+    border-radius: 10px;
+}
+
+/* ===== LOGOUT BUTTON ===== */
+
+.nav-user button {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.nav-user button:hover {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+/* ===== RESPONSIVE NAVIGATION ===== */
+
+@media (max-width: 1100px) {
+    .main-navbar {
+        padding: 16px 24px;
+        flex-wrap: wrap;
+    }
+
+    .nav-links {
+        gap: 4px;
+    }
+
+    .nav-links a {
+        padding: 8px 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-navbar {
+        justify-content: center;
+        padding: 16px;
+        gap: 14px;
+    }
+
+    .nav-logo {
+        width: 100%;
+        text-align: center;
+    }
+
+    .nav-links {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .nav-user {
+        justify-content: center;
+    }
+}
