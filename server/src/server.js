@@ -222,6 +222,4 @@ app.get("/api/me", authenticateToken, async (req, res) => {
   }
 });
 
-app.use('/api/stats', require('./routes/stats'));
-
-app.listen(3000, () => console.log('Running on http://localhost:3000'));
+app.listen(3000, () => console.log("Running on http://localhost:3000"));
