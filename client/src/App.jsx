@@ -1,16 +1,16 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, useNavigate } from "react-router-dom";
+
 import Teams from "./components/Teams";
 import Home from "./components/Home";
 import Groups from "./components/Groups";
+import Admin from "./components/admin";
 
-import Login from "./components/login";
 import Register from "./components/register";
 import AuthPage from "./pages/AuthPage";
 import StatsPage from "./pages/StatsPage";
 import Guesses from "./pages/Guesses";
 
 import ProtectedRoute from "./ProtectedRoute";
-import { useNavigate } from "react-router-dom";
 
 function App() {
   // for report provide the db code allongside a result
@@ -41,6 +41,14 @@ function App() {
         <Route path="/Register" element={<Register />} />
         <Route path="/stats" element={<StatsPage />} />
 
+        {/* Temporary development preview routes */}
+        {import.meta.env.DEV && (
+          <>
+            <Route path="/home-preview" element={<Home />} />
+            <Route path="/admin-preview" element={<Admin />} />
+          </>
+        )}
+
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Home />} />
@@ -49,6 +57,7 @@ function App() {
           <Route path="/Guesses" element={<Guesses />} />
         </Route>
 
+        {/* Page not found */}
         <Route path="*" element={<p>Page not found</p>} />
       </Routes>
     </>
