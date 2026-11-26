@@ -1,23 +1,23 @@
+import "../styles/Teams.css"
 import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faBellSlash } from '@fortawesome/free-regular-svg-icons';
+import Notifications from "./Notifications";
 
 function Teams(){
     const user_id = localStorage.getItem('user');
     const token = localStorage.getItem('token');
 
     //connect to the DB and pull the list of all the teams
-    const [message, setMessage] = useState("");
     const [teams, setTeams] = useState([]);
     const [loadStatus, setLoadedStatus] = useState("loading");
     const [following, setFollowing] = useState([]);
-    const [NotificationsOn, setNotificationON] = useState(false);
+    const [activeTab, setActiveTab] = useState("teams");
 
     useEffect(() => {
       const load = async () => {
         try {
-          const [helloRes, teamsRes, followDataRes] = await Promise.all([
-            fetch("/api/hello"),
+          const [teamsRes, followDataRes] = await Promise.all([
             fetch("/api/teams"),
             fetch("/api/followData", {
               method: 'GET',
@@ -27,15 +27,13 @@ function Teams(){
             })
           ]);
 
-          if (!helloRes.ok || !teamsRes.ok || !followDataRes) {
+          if (!teamsRes.ok || !followDataRes) {
             throw new Error("Server returned an error");
           }
 
-          const helloData = await helloRes.json();
           const teamsData = await teamsRes.json();
           const followData = await followDataRes.json();
 
-          setMessage(helloData.message);
           setTeams(teamsData);
           setFollowing(followData);
 
@@ -67,6 +65,7 @@ function Teams(){
         setLoadedStatus("error");
       }
     }  
+
     const follow = async (team_id) => {
       const response = await fetch('/api/follow', {
         method: 'POST',
@@ -83,13 +82,32 @@ function Teams(){
 
       await updateFollowing();
 
-      console.log(data)
+      console.log(following);
+      console.log(data);
 
       return data;
     }
 
-    const notification = () =>{
+    const notificationUpdate = async (team_id) => {
+      const response = await fetch('/api/notification', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ team_id })
+      });
+      if (!response.ok) {
+        throw new Error("Failed to update notification status");
+      }
+      const data = await response.json();
 
+      await updateFollowing();
+
+      console.log(following);
+      console.log(data);
+
+      return data;
     }
 
     if (loadStatus === "loading") return <p>Loading...</p>;
@@ -97,22 +115,94 @@ function Teams(){
 
     return(
         <>
-            <div>Server test: {message}</div>
-            <search></search>
-            <div>
-                current teams
-                {teams.users.map((team) => (
-                    <div key={team.team_id}>
-                      {team.team_name} 
-                      <button onClick={() => follow(team.team_id)}>
-                          {following.following.some(
-                            (followedTeam) => followedTeam.team_id === team.team_id
-                          ) ? "Unfollow" : "Follow"}
-                      </button> 
-                      <button><FontAwesomeIcon icon={faBellSlash}/></button>
-                    </div>
-                ))}
+             <header className="page-header">
+              <h1>TEAMS & NOTIFICATIONS</h1>
+              <p>Follow teams to get game-day and final-score alerts.</p>
+            </header>
+
+            <div className="tabs">
+              <button
+                className={`tab ${activeTab === "teams" ? "active" : ""}`}
+                onClick={() => setActiveTab("teams")}
+              >
+                TEAMS
+              </button>
+
+              <button
+                className={`tab ${activeTab === "notifications" ? "active" : ""}`}
+                onClick={() => setActiveTab("notifications")}
+              >
+                NOTIFICATIONS 🟠
+              </button>
             </div>
+          {activeTab === "teams" && (
+            <>
+              <div className="team-toolbar">
+                <input
+                  type="text"
+                  placeholder="⌕  Search teams..."
+                  className="team-search"
+                />
+              
+                <span className="following-count">
+                  Following {following.following?.length || 0} of {teams.users.length}
+                </span>
+              </div>
+              <div className="team-grid">
+                {teams.users.map((team) => {
+                    const isFollowing = following.following?.some(
+                      (item) => item.team_id === team.team_id
+                    );
+
+                    const notificationsOn = following.following?.find(
+                      (item) => item.team_id === team.team_id
+                    )?.notifications_on;
+
+                    return (
+                      <div className="team-card" key={team.team_id}>
+
+                        <div className="team-info">
+                          <div className="team-logo">
+                            {"PLH"}
+                          </div>
+
+                          <div>
+                            <span className="team-city">{team.city}</span>
+                            <h3>{team.team_name}</h3>
+                          </div>
+                        </div>
+
+                        <button
+                          className={isFollowing ? "followed-button" : "follow-button"}
+                          onClick={() => follow(team.team_id)}
+                        >
+                          {isFollowing ? "✓ Following · Unfollow" : "+ Follow"}
+                        </button>
+
+                        {isFollowing && (
+                          <div className="notification-row">
+                            <span>Notifications {notificationsOn ? "on" : "off"}</span>
+
+                            <input
+                              type="checkbox"
+                              checked={notificationsOn}
+                              onChange={() => notificationUpdate(team.team_id)}
+                            />
+                          </div>
+                        )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+          {activeTab === "notifications" && (
+            <>
+              <div>
+                <Notifications/>
+              </div>
+            </>
+          )}    
         </>
     )
 }

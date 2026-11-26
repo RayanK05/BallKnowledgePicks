@@ -31,6 +31,9 @@ CREATE TABLE GAMES (
     CONSTRAINT uq_games_matchup    UNIQUE (home_team_id, away_team_id, game_date)
 );
 
+-- add id to games table
+ALTER TABLE games ADD COLUMN external_id TEXT UNIQUE;
+
 CREATE TABLE PREDICTIONS (
     prediction_id        SERIAL  PRIMARY KEY,
     user_id              INT     NOT NULL REFERENCES USERS(user_id) ON DELETE CASCADE,
@@ -70,6 +73,115 @@ CREATE TABLE NOTIFICATIONS (
     CONSTRAINT chk_notifications_type CHECK (alert_type IN ('win', 'loss', 'game_day'))
 );
 
+ALTER TABLE notifications
+  ADD CONSTRAINT uq_notifications_user_game_team_type
+  UNIQUE (user_id, game_id, team_id, alert_type);
+
+
+-- create the trigger for game status changes
+CREATE OR REPLACE FUNCTION public.notify_game_final()
+    RETURNS trigger
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE NOT LEAKPROOF
+AS $BODY$
+BEGIN
+  INSERT INTO notifications (user_id, game_id, team_id, alert_type)
+  SELECT f.user_id,
+         NEW.game_id,
+         f.team_id,
+         CASE WHEN f.team_id = NEW.winner_id THEN 'win' ELSE 'loss' END
+  FROM user_followed_teams f
+  WHERE f.team_id IN (NEW.home_team_id, NEW.away_team_id)
+  ON CONFLICT (user_id, game_id, team_id, alert_type) DO NOTHING;
+  RETURN NEW;
+END;
+$BODY$;
+
+ALTER FUNCTION public.notify_game_final()
+    OWNER TO postgres;
+
+DROP TRIGGER IF EXISTS predictions_notify ON predictions;
+DROP TRIGGER IF EXISTS games_final_event ON games;
+
+-- fires when someone submits or edits a pick (optional, see note below)
+CREATE OR REPLACE FUNCTION notify_prediction_change() RETURNS trigger AS $$
+BEGIN
+  PERFORM pg_notify('db_events', json_build_object(
+    'type', 'prediction',
+    'user_id', NEW.user_id,
+    'game_id', NEW.game_id,
+    'predicted_winner_id', NEW.predicted_winner_id,
+    'username', (SELECT username FROM users WHERE user_id = NEW.user_id),
+    'operation', TG_OP                     -- 'INSERT' or 'UPDATE'
+  )::text);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER predictions_notify
+AFTER INSERT OR UPDATE ON predictions
+FOR EACH ROW EXECUTE FUNCTION notify_prediction_change();
+
+-- fires when a game gets its winner, which is when scores change
+CREATE OR REPLACE FUNCTION notify_game_final_event() RETURNS trigger AS $$
+BEGIN
+  PERFORM pg_notify('db_events', json_build_object(
+    'type', 'game_final', 'game_id', NEW.game_id
+  )::text);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER games_final_event
+AFTER UPDATE OF winner_id ON games
+FOR EACH ROW
+WHEN (OLD.winner_id IS NULL AND NEW.winner_id IS NOT NULL)
+EXECUTE FUNCTION notify_game_final_event();
+
+-- announce score changes
+CREATE OR REPLACE FUNCTION notify_score_change() RETURNS trigger AS $$
+BEGIN
+  PERFORM pg_notify('db_events', json_build_object(
+    'type', 'score',
+    'user_id', NEW.user_id,
+    'user_score', NEW.user_score
+  )::text);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- fire only when the value actually changes
+DROP TRIGGER IF EXISTS users_score_notify ON users;
+CREATE TRIGGER users_score_notify
+AFTER UPDATE OF user_score ON users
+FOR EACH ROW
+WHEN (OLD.user_score IS DISTINCT FROM NEW.user_score)
+EXECUTE FUNCTION notify_score_change();
+
+CREATE OR REPLACE FUNCTION notify_group_member_change() RETURNS trigger AS $$
+DECLARE
+  rec group_members;
+BEGIN
+  -- DELETE has no NEW row, so read from OLD there
+  IF TG_OP = 'DELETE' THEN rec := OLD; ELSE rec := NEW; END IF;
+
+  PERFORM pg_notify('db_events', json_build_object(
+    'type', 'group_member',
+    'operation', TG_OP,                       -- 'INSERT' = joined, 'DELETE' = left
+    'group_id', rec.group_id,
+    'user_id', rec.user_id,
+    'username', (SELECT username FROM users WHERE user_id = rec.user_id)
+  )::text);
+
+  RETURN NULL;   -- the return value is ignored for AFTER triggers
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS group_members_notify ON group_members;
+CREATE TRIGGER group_members_notify
+AFTER INSERT OR DELETE ON group_members
+FOR EACH ROW EXECUTE FUNCTION notify_group_member_change();
 -- ACTION: recalculate scores for everyone who picked this game
 CREATE OR REPLACE FUNCTION recalc_scores_for_game()
 RETURNS TRIGGER AS $$

@@ -6,6 +6,16 @@ const db = require("./db");
 const authenticateToken = require("./authenticateToken");
 const app = express();
 app.use(express.json());
+const http = require("http");
+const { Server } = require("socket.io");
+const createEventListener = require("./webSocket");
+
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, { cors: { origin: "http://localhost:5173" } });
+const PORT = process.env.PORT; 
+httpServer.listen(PORT);
+
+let isSeeding = false;
 
 const BASE = "https://api.balldontlie.io/v1";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -25,34 +35,6 @@ app.get("/api/teams", async (req, res) => {
   try {
     const result = await db.query("SELECT team_id, team_name FROM teams ORDER BY team_name");
     res.json({ ok: true, teams: result.rows });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
-
-// //this will get the past present and future games present in the DB
-// app.get('/api/games', async (req, res) => {
-//   try {
-//     const result = await getGames();
-//     res.json({ ok: true, games: result });
-//   } catch (err) {
-//     res.status(500).json({ ok: false, error: err.message });
-//   }
-// });
-
-// TEMP: reads games from the DB
-app.get("/api/games", async (req, res) => {
-  try {
-    const result = await db.query(`
-      SELECT g.game_id, g.game_date, g.home_score, g.away_score, g.winner_id,
-             g.home_team_id, ht.team_name AS home_team,
-             g.away_team_id, at.team_name AS away_team
-      FROM games g
-      JOIN teams ht ON g.home_team_id = ht.team_id
-      JOIN teams at ON g.away_team_id = at.team_id
-      ORDER BY g.game_date
-    `);
-    res.json({ ok: true, games: result.rows });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
@@ -98,9 +80,37 @@ const getGames = async () => {
   return all;
 };
 
-//check once a day for the scheduled games to see if they are completed
 
-// users can follow one team + will receive notifications on win and loss updates from the followed team
+//this will get the past present and future games present in the DB
+const seedGames = async () => {
+  const result = await getGames();
+  let count = 0;
+
+  for (const g of result){
+      const isFinal = g.status_state === "final";
+      if (g.postponed && !isFinal) continue; // skip postponed games, a new date will show up as its own game
+
+      const homeScore = isFinal ? g.home_team_score : null;
+      const awayScore = isFinal ? g.visitor_team_score : null;
+      const winnerId = isFinal
+        ? (g.home_team_score > g.visitor_team_score ? g.home_team.id : g.visitor_team.id)
+        : null;
+
+    await db.query(
+    `INSERT INTO games (home_team_id, away_team_id, game_date, winner_id, home_score, away_score, external_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (external_id) DO UPDATE SET
+      winner_id  = COALESCE(games.winner_id, EXCLUDED.winner_id),
+      home_score = COALESCE(EXCLUDED.home_score, games.home_score),
+      away_score = COALESCE(EXCLUDED.away_score, games.away_score)`,
+      [g.home_team.id, g.visitor_team.id, g.date, winnerId, homeScore, awayScore, String(g.id)]
+    );
+
+    count++;
+  }
+
+  return count;
+}
 
 // login route
 app.post("/api/login", async (req, res) => {
@@ -207,6 +217,275 @@ app.get("/api/followData", authenticateToken, async (req, res) => {
   }
 });
 
+app.patch('/api/notification', authenticateToken, async (req, res) => {
+  try{
+    const user_id = req.user.user_id;
+    const { team_id } = req.body;
+
+    const result = await db.query(
+      `UPDATE USER_FOLLOWED_TEAMS
+       SET notifications_on = NOT notifications_on
+       WHERE user_id = $1 AND team_id = $2
+       RETURNING notifications_on`,
+      [user_id, team_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        message: 'You are not following this team.'
+      });
+    }
+
+    return res.json({
+      ok: true,
+      notifications_on: result.rows[0].notifications_on
+    });
+    
+  }catch(err){
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// users can follow one team + will receive notifications on win and loss updates from the followed team
+app.get('/api/getNotification', authenticateToken, async (req, res) => {
+  try{
+    const user_id = req.user.user_id;
+
+    const result = await db.query(
+      `SELECT n.notification_id, n.alert_type, n.is_read,
+              t.team_name AS followed_team,
+              h.team_name AS home_team, a.team_name AS away_team,
+              g.home_score, g.away_score, g.game_date
+      FROM notifications n
+      JOIN user_followed_teams u ON u.user_id = n.user_id AND u.team_id = n.team_id
+      JOIN teams t ON t.team_id = n.team_id
+      JOIN games g ON g.game_id = n.game_id
+      JOIN teams h ON h.team_id = g.home_team_id
+      JOIN teams a ON a.team_id = g.away_team_id
+      WHERE n.user_id = $1
+        AND u.notifications_on = TRUE
+      ORDER BY n.notification_id DESC
+      LIMIT 50`,
+      [user_id]
+    );
+
+    return res.json({
+      ok: true,
+      notifications: result.rows
+    });
+    
+  }catch(err){
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/joinGroup', authenticateToken, async (req, res) => {
+  try{
+    const user_id = req.user.user_id;
+    const { group_id } = req.body;
+
+    if (!Number.isInteger(group_id)) {
+      return res.status(400).json({ ok: false, message: 'Invalid group id.' });
+    }
+
+    const result = await db.query(
+      `INSERT INTO group_members (group_id, user_id)
+       VALUES ($1, $2)
+       ON CONFLICT (group_id, user_id) DO NOTHING
+       RETURNING group_id`,
+      [group_id, user_id]
+    );
+
+    // no row back means they were already a member, so nothing was inserted
+    if (result.rows.length === 0) {
+      return res.json({ ok: true, alreadyMember: true });
+    }
+
+    return res.status(201).json({ ok: true, alreadyMember: false });
+  } catch (err) {
+    if (err.code === '23503') {
+      return res.status(404).json({ ok: false, message: 'Group not found.' });
+    }
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/leaveGroup', authenticateToken, async (req, res) => {
+  try {
+    const user_id = req.user.user_id;
+    const group_id = Number(req.body.group_id);
+
+    if (!Number.isInteger(group_id)) {
+      return res.status(400).json({ ok: false, message: 'Invalid group id.' });
+    }
+
+    const result = await db.query(
+      `DELETE FROM group_members
+       WHERE group_id = $1 AND user_id = $2
+       RETURNING group_id`,
+      [group_id, user_id]
+    );
+
+    // nothing deleted means they were never a member of this group
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        message: 'You are not a member of this group.'
+      });
+    }
+
+    // stop this user's open sockets from receiving the group's live updates
+    for (const [, socket] of io.sockets.sockets) {
+      if (socket.userId === user_id) socket.leave(`group_${group_id}`);
+    }
+
+    return res.json({ ok: true, group_id });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// the groups the logged-in user belongs to
+app.get("/api/myGroups", authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT g.group_id, g.group_name
+       FROM group_members gm
+       JOIN groups g ON g.group_id = gm.group_id
+       WHERE gm.user_id = $1
+       ORDER BY g.group_name`,
+      [req.user.user_id]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// leaderboard: correct picks per member, best first
+app.get("/api/groups/:groupId/leaderboard", authenticateToken, async (req, res) => {
+  const groupId = Number(req.params.groupId);
+  try {
+    const { rows } = await db.query(
+      `SELECT u.user_id, u.username, u.user_score
+       FROM group_members gm
+       JOIN users u ON u.user_id = gm.user_id
+       WHERE gm.group_id = $1
+       ORDER BY u.user_score DESC, u.username`,
+      [groupId]
+    );
+    res.json(rows);
+    } catch (err) {
+      console.error("Leaderboard failed:", err);
+      res.status(500).json({ error: err.message });
+    }
+});
+
+// create a group and add the creator as its first member
+app.post("/api/createGroup", authenticateToken, async (req, res) => {
+  const name = (req.body.group_name ?? "").trim();
+  if (!name || name.length > 30) return res.status(400).json({ error: "Name must be 1-30 characters" });
+
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const { rows } = await client.query(
+      "INSERT INTO groups (group_name) VALUES ($1) RETURNING group_id, group_name", [name]);
+    await client.query(
+      "INSERT INTO group_members (group_id, user_id) VALUES ($1, $2)",
+      [rows[0].group_id, req.user.user_id]);
+    await client.query("COMMIT");
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
+app.post('/api/deleteGroup', authenticateToken, async (req, res) => {
+  try {
+    const group_id = Number(req.body.group_id);
+    if (!Number.isInteger(group_id)) {
+      return res.status(400).json({ ok: false, message: 'Invalid group id.' });
+    }
+
+    const result = await db.query(// add user roles
+      `DELETE FROM groups
+       WHERE group_id = $1
+       RETURNING group_id`,
+      [group_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ ok: false, message: 'This group does not exist.' });
+    }
+
+    const room = `group_${group_id}`;
+
+    // 1. tell everyone in the room so their screens can clear
+    io.to(room).emit("groupUpdate", { type: "group_deleted", groupId: group_id });
+
+    // 2. then remove every socket from the room
+    io.in(room).socketsLeave(room);
+
+    return res.json({ ok: true, group_id });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+const runSeedGames = async () => {
+  if (isSeeding) return;
+
+  isSeeding = true;
+
+  try {
+    const n = await seedGames();
+    console.log(`Seeded ${n} games`);
+  } catch (err) {
+    console.error("Seed failed:", err);
+  } finally {
+    isSeeding = false;
+  }
+};
+
+runSeedGames();
+
+setInterval(runSeedGames, 60 * 60 * 1000); //check once an hour for the scheduled games to see if they are completed
+
+// check the token on every socket connection
+io.use((socket, next) => {
+  try {
+    const payload = jwt.verify(socket.handshake.auth.token, process.env.JWT_SECRET);
+    socket.userId = payload.user_id ?? payload.id; // match the field your login route puts in the token
+    next();
+  } catch {
+    next(new Error("unauthorized"));
+  }
+});
+
+io.on("connection", (socket) => {
+  socket.on("joinGroup", async (groupId, ack) => {
+    try {
+      const { rowCount } = await db.query(
+        "SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2",
+        [groupId, socket.userId]
+      );
+      if (!rowCount) return ack?.({ ok: false });
+      socket.join(`group_${groupId}`);
+      ack?.({ ok: true });
+    } catch {
+      ack?.({ ok: false });
+    }
+  });
+
+  socket.on("leaveGroup", (groupId) => socket.leave(`group_${groupId}`));
+});
+
+createEventListener(io).start();
 app.get("/api/me", authenticateToken, async (req, res) => {
   try {
     const result = await db.query(

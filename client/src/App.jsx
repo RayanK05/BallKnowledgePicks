@@ -12,9 +12,8 @@ import Guesses from "./pages/Guesses";
 
 import ProtectedRoute from "./ProtectedRoute";
 
-function App() {
-  // for report provide the db code allongside a result
-  const isAuthenticated = localStorage.getItem("token");
+function App() {// for report provide the db code allongside a result
+  const isAuthenticated = localStorage.getItem('token');
   const navigate = useNavigate();
 
   const handleLogout = () => {
