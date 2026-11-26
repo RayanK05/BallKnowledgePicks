@@ -8,7 +8,7 @@ const router = express.Router();
 // ADMIN AUTHENTICATION
 // ================================
 
-// Verify that the authenticated user is an administrator
+// Verify that the authenticated user is an administrator.
 
 router.use(authenticateToken, async (req, res, next) => {
 
@@ -35,13 +35,14 @@ router.use(authenticateToken, async (req, res, next) => {
         next(err);
 
     }
+
 });
 
 // ================================
 // HELPER FUNCTIONS
 // ================================
 
-// Error handling wrapper
+// Error handling wrapper.
 
 const wrap = fn => (req, res, next) =>
     Promise.resolve(
@@ -99,7 +100,7 @@ function findRecord(result) {
     return result.rows[0];
 }
 
-// Execute related SQL queries as one transaction
+// Execute related SQL queries as one transaction.
 
 async function transaction(callback) {
 
@@ -130,9 +131,10 @@ async function transaction(callback) {
         client.release();
 
     }
+
 }
 
-// Recalculate scores after game results change
+// Recalculate scores after game results change.
 
 async function updateUserScores(client) {
 
@@ -156,9 +158,10 @@ async function updateUserScores(client) {
         )
 
     `);
+
 }
 
-// Validate game information and calculate winner
+// Validate game information and calculate winner.
 
 function getGameValues(body) {
 
@@ -203,6 +206,7 @@ function getGameValues(body) {
         }
 
         return score;
+
     }
 
     const homeScore = parseScore(body.home_score);
@@ -237,6 +241,7 @@ function getGameValues(body) {
         winner
 
     ];
+
 }
 
 // ================================
@@ -271,10 +276,181 @@ router.get("/summary", wrap(async (req, res) => {
 }));
 
 // ================================
+// USER ROLE MANAGEMENT
+// ================================
+
+// Promote or demote an existing user by username.
+
+router.patch("/users/role", wrap(async (req, res) => {
+
+    const { username, role } = req.body;
+
+    // Validate username.
+
+    if (
+        typeof username !== "string" ||
+        !username.trim() ||
+        username.trim().length > 30
+    ) {
+
+        throw badRequest("Enter a valid username");
+
+    }
+
+    // Only allow the supported account roles.
+
+    if (!["admin", "user"].includes(role)) {
+
+        throw badRequest("Invalid role");
+
+    }
+
+    const client = await db.connect();
+
+    try {
+
+        await client.query(
+            "BEGIN ISOLATION LEVEL READ COMMITTED"
+        );
+
+        // Prevent simultaneous role changes from removing
+        // every administrator in the system.
+
+        await client.query(
+            "LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE"
+        );
+
+        // Recheck that the requesting user is still an admin
+        // after acquiring the database lock.
+
+        const requester = await client.query(
+
+            `SELECT role
+             FROM users
+             WHERE user_id = $1`,
+
+            [req.user.user_id]
+
+        );
+
+        if (requester.rows[0]?.role !== "admin") {
+
+            throw Object.assign(
+                new Error("Administrator access required"),
+                { status: 403 }
+            );
+
+        }
+
+        // Find the target user by username.
+
+        const result = await client.query(`
+
+            SELECT
+                user_id,
+                username,
+                role
+
+            FROM users
+
+            WHERE username = $1
+
+        `, [username.trim()]);
+
+        if (!result.rowCount) {
+
+            throw Object.assign(
+                new Error("Username not found"),
+                { status: 404 }
+            );
+
+        }
+
+        const user = result.rows[0];
+
+        // Check that another administrator will remain
+        // before allowing an administrator to be demoted.
+
+        if (user.role === "admin" && role === "user") {
+
+            const admins = await client.query(`
+
+                SELECT COUNT(*)::int AS count
+
+                FROM users
+
+                WHERE role = 'admin'
+
+            `);
+
+            if (admins.rows[0].count <= 1) {
+
+                throw badRequest(
+                    "Cannot demote the last administrator"
+                );
+
+            }
+
+        }
+
+        // Update the user's role.
+
+        const updated = await client.query(`
+
+            UPDATE users
+
+            SET role = $1
+
+            WHERE user_id = $2
+
+            RETURNING
+                user_id,
+                username,
+                role
+
+        `, [role, user.user_id]);
+
+        await client.query("COMMIT");
+
+        // Let the frontend know if the requesting admin
+        // has successfully demoted themselves.
+
+        const selfDemoted =
+            Number(user.user_id) ===
+            Number(req.user.user_id) &&
+            role === "user";
+
+        res.json({
+
+            ok: true,
+
+            user: updated.rows[0],
+
+            self_demoted: selfDemoted,
+
+            message: `${user.username}'s role is now ${role}.`
+
+        });
+
+    } catch (err) {
+
+        await client.query("ROLLBACK");
+
+        throw err;
+
+    } finally {
+
+        client.release();
+
+    }
+
+}));
+
+// ================================
 // TEAM MANAGEMENT
 // ================================
 
-// Retrieve teams directly from PostgreSQL
+// Retrieve teams directly from PostgreSQL.
 
 router.get("/teams", wrap(async (req, res) => {
 
@@ -297,7 +473,7 @@ router.get("/teams", wrap(async (req, res) => {
 
 }));
 
-// Add team
+// Add team.
 
 router.post("/teams", wrap(async (req, res) => {
 
@@ -324,7 +500,7 @@ router.post("/teams", wrap(async (req, res) => {
 
 }));
 
-// Edit team
+// Edit team.
 
 router.put("/teams/:id", wrap(async (req, res) => {
 
@@ -353,7 +529,7 @@ router.put("/teams/:id", wrap(async (req, res) => {
 
 }));
 
-// Delete team
+// Delete team.
 
 router.delete("/teams/:id", wrap(async (req, res) => {
 
@@ -424,7 +600,7 @@ router.delete("/teams/:id", wrap(async (req, res) => {
 // GAME MANAGEMENT
 // ================================
 
-// Retrieve games directly from PostgreSQL
+// Retrieve games directly from PostgreSQL.
 
 router.get("/games", wrap(async (req, res) => {
 
@@ -473,7 +649,7 @@ router.get("/games", wrap(async (req, res) => {
 
 }));
 
-// Add game
+// Add game.
 
 router.post("/games", wrap(async (req, res) => {
 
@@ -514,7 +690,7 @@ router.post("/games", wrap(async (req, res) => {
 
 }));
 
-// Edit game and update results
+// Edit game and update results.
 
 router.put("/games/:id", wrap(async (req, res) => {
 
@@ -539,7 +715,7 @@ router.put("/games/:id", wrap(async (req, res) => {
         );
 
         // Do not change participating teams
-        // after predictions already exist
+        // after predictions already exist.
 
         if (
             Number(oldGame.home_team_id) !== values[0] ||
@@ -607,7 +783,7 @@ router.put("/games/:id", wrap(async (req, res) => {
 
 }));
 
-// Delete game
+// Delete game.
 
 router.delete("/games/:id", wrap(async (req, res) => {
 
