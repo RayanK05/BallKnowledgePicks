@@ -1,3 +1,6 @@
+-- Ball Knowledge Picks mock data (matches schema.sql)
+-- WARNING: this empties every table first.
+
 TRUNCATE notifications, user_followed_teams, group_members, groups,
          predictions, games, teams, users RESTART IDENTITY CASCADE;
 
@@ -45,17 +48,11 @@ INSERT INTO teams (team_id, team_name) VALUES
     (29, 'Utah Jazz'),
     (30, 'Washington Wizards');
 
-INSERT INTO games ( home_team_id, away_team_id, game_date, winner_id, home_score, away_score) VALUES
-    (  1,  2,  '2026-10-20', 1,  115, 102),
-    (  3,  4,  '2026-10-21', 3,  121, 108),
-    (  5,  6,  '2026-10-22', 5,  110, 104),
-    (  7,  8,  '2026-10-23', 7,  118, 109),
-    (  9,  10, '2026-10-24', 9,  124, 113),
-    (  2,  3,  '2026-10-25', 2,  117, 111),
-    (  4,  1,  '2026-10-26', 4,  120, 106),
-    (  6,  7,  '2026-10-27', 6,  112, 105),
-    (  8,  9,  '2026-10-28', 8,  116, 110),
-    (  10, 5,  '2026-10-29', 10, 119, 107);
+-- teams were inserted with explicit ids, so move the sequence past them
+SELECT setval(pg_get_serial_sequence('teams', 'team_id'), (SELECT MAX(team_id) FROM teams));
+
+-- external_id is left NULL (the API seed fills it in); tipoff is 7:30 PM Eastern (EDT, UTC-4)
+-- only get games from the api
 
 INSERT INTO predictions (user_id, game_id, predicted_winner_id) VALUES
     (1, 1, 1),
@@ -81,17 +78,22 @@ INSERT INTO groups (group_name) VALUES
     ('Nuggets Fans'),
     ('NBA Predictions League');
 
-INSERT INTO group_members (group_id, user_id) VALUES
-    (1,  1),
-    (1,  2),
-    (1,  3),
-    (1,  4),
-    (2,  5),
-    (2,  6),
-    (3,  7),
-    (4,  8),
-    (5,  9),
-    (10, 10);
+-- every group has at least one admin (the first member listed for each)
+INSERT INTO group_members (group_id, user_id, role) VALUES
+    (1,  1,  'admin'),
+    (1,  2,  'member'),
+    (1,  3,  'member'),
+    (1,  4,  'member'),
+    (2,  5,  'admin'),
+    (2,  6,  'member'),
+    (3,  7,  'admin'),
+    (4,  8,  'admin'),
+    (5,  9,  'admin'),
+    (6,  2,  'admin'),
+    (7,  3,  'admin'),
+    (8,  4,  'admin'),
+    (9,  5,  'admin'),
+    (10, 10, 'admin');
 
 INSERT INTO user_followed_teams (user_id, team_id, notifications_on) VALUES
     (1, 2, TRUE),
@@ -116,3 +118,16 @@ INSERT INTO notifications (user_id, team_id, game_id, alert_type, is_read) VALUE
     (1, 3, 2, 'win',      FALSE),
     (2, 3, 2, 'win',      FALSE),
     (3, 2, 6, 'game_day', FALSE);
+
+-- Sanity check (run on its own): user_score should equal 10 points per correct pick.
+-- This should return no rows.
+-- SELECT u.user_id, u.user_score, COALESCE(c.correct, 0) * 10 AS expected
+-- FROM users u
+-- LEFT JOIN (
+--   SELECT p.user_id, COUNT(*) AS correct
+--   FROM predictions p
+--   JOIN games g ON g.game_id = p.game_id
+--   WHERE p.predicted_winner_id = g.winner_id
+--   GROUP BY p.user_id
+-- ) c ON c.user_id = u.user_id
+-- WHERE u.user_score <> COALESCE(c.correct, 0) * 10;

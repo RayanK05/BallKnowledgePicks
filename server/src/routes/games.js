@@ -9,7 +9,7 @@ router.get("/games", async (req, res) => {
 
     const conditions = []; // pieces of the WHERE clause
     const params = []; // values for $1, $2, ...
-
+  
     if (team) {
       params.push(team);
       conditions.push(`(g.home_team_id = $${params.length} OR g.away_team_id = $${params.length})`);
@@ -21,6 +21,13 @@ router.get("/games", async (req, res) => {
     if (to) {
       params.push(to);
       conditions.push(`g.game_date <= $${params.length}`);
+    }
+
+    if (!team && !from && !to) {
+      conditions.push(
+        `g.game_date BETWEEN (NOW() AT TIME ZONE 'America/New_York')::date - 3
+                        AND (NOW() AT TIME ZONE 'America/New_York')::date + 3`
+      );
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";

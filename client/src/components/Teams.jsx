@@ -1,7 +1,5 @@
 import "../styles/Teams.css"
 import { useEffect, useState } from "react";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBell, faBellSlash } from '@fortawesome/free-regular-svg-icons';
 import Notifications from "./Notifications";
 
 function Teams(){
@@ -27,7 +25,7 @@ function Teams(){
             })
           ]);
 
-          if (!teamsRes.ok || !followDataRes) {
+          if (!teamsRes.ok || !followDataRes.ok) {
             throw new Error("Server returned an error");
           }
 
@@ -82,9 +80,6 @@ function Teams(){
 
       await updateFollowing();
 
-      console.log(following);
-      console.log(data);
-
       return data;
     }
 
@@ -103,9 +98,6 @@ function Teams(){
       const data = await response.json();
 
       await updateFollowing();
-
-      console.log(following);
-      console.log(data);
 
       return data;
     }
@@ -145,11 +137,11 @@ function Teams(){
                 />
               
                 <span className="following-count">
-                  Following {following.following?.length || 0} of {teams.users.length}
+                  Following {following.following?.length || 0} of {teams.teams.length}
                 </span>
               </div>
               <div className="team-grid">
-                {teams.users.map((team) => {
+                {teams.teams.map((team) => {
                     const isFollowing = following.following?.some(
                       (item) => item.team_id === team.team_id
                     );

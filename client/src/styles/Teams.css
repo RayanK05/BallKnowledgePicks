@@ -1,49 +1,78 @@
-:root{
-  background-color: #111;
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800;900&display=swap');
+
+/* Theme colors, shared by every page that loads this file */
+:root {
+  --bg: #dfcdac;
+  --card: #f3e2cb;
+  --card-border: #e4cfb3;
+  --band: #ecd6b9;
+  --line: #cdb594;
+  --ink: #1a1a1a;
+  --muted: #5f4f3f;
+  --faint: #8a7660;
+  --accent: #ff4d00;
+  --accent-hover: #e04300;
+
+  background-color: var(--bg);
 }
+
 /* Main page */
 .teams-page {
-  background: #111113;
-  color: white;
+  background: var(--bg);
+  color: var(--ink);
   min-height: 100vh;
   padding: 20px 6%;
-  font-family: Arial, sans-serif;
+  font-family: 'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
   width: 100%;
   box-sizing: border-box;
 }
 
 /* Header */
 .page-header h1 {
-  font-size: 28px;
-  font-weight: 900;
-  margin-bottom: 4px;
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin: 0 0 4px 0;
+  color: var(--ink);
 }
 
 .page-header p {
-  color: #a5a5a5;
-  font-size: 12px;
+  color: var(--muted);
+  font-size: 15px;
+  margin: 0;
 }
 
 /* Tabs */
 .tabs {
   display: flex;
   gap: 10px;
-  border-bottom: 1px solid #29292d;
+  border-bottom: 1px solid rgba(95, 79, 63, 0.25);
   margin-top: 25px;
 }
 
 .tab {
   background: none;
   border: none;
-  color: #aaa;
+  border-bottom: 3px solid transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   padding: 12px 15px;
-  font-weight: bold;
   cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.tab:hover {
+  color: var(--ink);
 }
 
 .tab.active {
-  color: white;
-  border-bottom: 2px solid #f66a16;
+  color: var(--ink);
+  border-bottom-color: var(--accent);
 }
 
 /* Search and following count */
@@ -51,133 +80,188 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 15px 0;
+  margin: 20px 0;
 }
 
 .team-search {
-  background: #29292d;
-  border: none;
-  border-radius: 8px;
-  padding: 12px;
-  color: white;
+  background: var(--band);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
   width: 280px;
   outline: none;
   box-sizing: border-box;
+  transition: 0.2s ease;
+}
+
+.team-search::placeholder {
+  color: var(--faint);
+}
+
+.team-search:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255, 77, 0, 0.15);
 }
 
 .following-count {
-  background: #392114;
-  color: #f66a16;
-  padding: 6px 12px;
+  background: var(--accent);
+  color: #ffffff;
+  padding: 6px 14px;
   border-radius: 20px;
-  font-size: 11px;
-  font-weight: bold;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 /* Team grid */
 .team-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 9px;
+  gap: 14px;
 }
 
 /* Team card */
 .team-card {
-  background: #1c1c1f;
-  color: #ffffff;
-  border: 1px solid transparent;
-  border-radius: 9px;
-  padding: 10px;
-  min-height: 102px;
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 14px;
+  min-height: 122px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 9px;
-  transition: border 0.2s ease;
+  gap: 12px;
+  transition: border-color 0.2s ease, background 0.2s ease;
   box-sizing: border-box;
 }
 
 .team-card:hover {
-  border-color: #f66a16;
+  background: #f7e8d3;
+  border-color: var(--accent);
 }
 
 /* Team information */
 .team-info {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 11px;
 }
 
 .team-logo {
-  width: 27px;
-  height: 27px;
-  border-radius: 7px;
-  background: #34465f;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 10px;
+  background: #9c8564;
+  color: #ffffff;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 11px;
-  font-weight: bold;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .team-city {
   display: block;
-  color: #aaa;
-  font-size: 9px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .team-info h3 {
   margin: 2px 0 0;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 800;
+  color: var(--ink);
 }
 
 /* Follow button */
 .follow-button,
 .followed-button {
   width: 100%;
-  border-radius: 7px;
-  padding: 7px;
-  font-size: 10px;
-  font-weight: bold;
+  border-radius: 10px;
+  padding: 9px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
+  transition: 0.2s ease;
 }
 
 .follow-button {
-  background: #f66a16;
-  border: none;
-  color: #111;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: #ffffff;
 }
 
 .follow-button:hover {
-  background: #ff812f;
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 .followed-button {
   background: transparent;
-  border: 1px solid #333;
-  color: white;
+  border: 1px solid var(--ink);
+  color: var(--ink);
 }
 
 .followed-button:hover {
-  border-color: #f66a16;
-  color: #f66a16;
+  border-color: var(--accent);
+  color: var(--accent);
 }
-
-
 
 /* Notifications */
 .notification-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
   margin-top: 2px;
 }
 
 .notification-row input:focus-visible {
-  outline: 2px solid white;
+  outline: 2px solid var(--accent);
   outline-offset: 3px;
+}
+
+/* Toggle switch */
+.notification-row input {
+  appearance: none;
+  width: 34px;
+  height: 19px;
+  margin: 0;
+  background: #b9a384;
+  border-radius: 20px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.notification-row input::before {
+  content: "";
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  background: white;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s;
+}
+
+.notification-row input:checked {
+  background: var(--accent);
+}
+
+.notification-row input:checked::before {
+  transform: translateX(15px);
 }
 
 /* Responsive layout */
@@ -196,6 +280,10 @@
     padding: 16px;
   }
 
+  .page-header h1 {
+    font-size: 28px;
+  }
+
   .team-toolbar {
     gap: 10px;
   }
@@ -210,35 +298,4 @@
   .team-grid {
     grid-template-columns: 1fr;
   }
-}
-
-.notification-row input {
-  appearance: none;
-  width: 27px;
-  height: 15px;
-  background: #555;
-  border-radius: 20px;
-  position: relative;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.notification-row input::before {
-  content: "";
-  position: absolute;
-  width: 11px;
-  height: 11px;
-  background: white;
-  border-radius: 50%;
-  top: 2px;
-  left: 2px;
-  transition: transform 0.2s;
-}
-
-.notification-row input:checked {
-  background: #f66a16;
-}
-
-.notification-row input:checked::before {
-  transform: translateX(12px);
 }

@@ -97,13 +97,22 @@ const seedGames = async () => {
         : null;
 
     await db.query(
-    `INSERT INTO games (home_team_id, away_team_id, game_date, winner_id, home_score, away_score, external_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO games (external_id, home_team_id, away_team_id, game_date, tipoff, winner_id, home_score, away_score)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       ON CONFLICT (external_id) DO UPDATE SET
       winner_id  = COALESCE(games.winner_id, EXCLUDED.winner_id),
       home_score = COALESCE(EXCLUDED.home_score, games.home_score),
       away_score = COALESCE(EXCLUDED.away_score, games.away_score)`,
-      [g.home_team.id, g.visitor_team.id, g.date, winnerId, homeScore, awayScore, String(g.id)]
+      [
+        String(g.id), 
+        g.home_team.id,     
+        g.visitor_team.id,   
+        g.date,   
+        g.datetime,          
+        winnerId,            
+        homeScore,          
+        awayScore,         
+      ]
     );
 
     count++;
