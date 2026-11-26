@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useGroupSocket } from "../useGroupSocket";
 import { Navigate } from "react-router-dom";
 
-function GroupLeaderboard({ groupId }) {
+function GroupLeaderboard({ groupId, handleGroupUpdate }) {
   const [rows, setRows] = useState([]);
   const timer = useRef();
 
@@ -26,20 +26,12 @@ function GroupLeaderboard({ groupId }) {
   useGroupSocket(groupId, (msg) => {
 
     if (msg.type === "picks_changed") {
-           alert(`${msg.username} made a new prediction.`);
-        }
-
-    if (msg.type === "left_group" || msg.type === "group_deleted") {
-        // this user was removed, so send them back to their group list
-        if (msg.type === "group_deleted") {
-            alert(`Group ${msg.groupId} has been deleted.`)
-        }
-        else{
-            alert(`User ${msg.user_id} has left group ${msg.groupId}.`)
-        }
-        return;
+        alert(`${msg.username} made a new prediction.`);
     }
-    
+
+    if (msg.type === "group_deleted" || msg.type === "left_group") {
+        handleGroupUpdate(msg);
+    }
 
     if (["leaderboard_changed", "picks_changed", "members_changed","connected"].includes(msg.type)) { //need live updates on join and leave
         clearTimeout(timer.current);
@@ -48,11 +40,33 @@ function GroupLeaderboard({ groupId }) {
   });
 
   return (
-    <ul>
-      {rows.map((r) => (
-        <li key={r.user_id}>{r.username}: {r.user_score}</li>
-      ))}
-    </ul>
+    <div className="leaderboard-content">
+        <table className="leaderboard-table">
+            <thead>
+                <tr>
+                    <th className="rank">Rank</th>
+                    <th>Member</th>
+                    <th>Accuracy</th>
+                    <th className="score">Score</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {rows.map((r, index) => (
+                    <tr key={r.user_id}>
+                        <td className="rank">#{index + 1}</td>
+                        <td>{r.username}</td>
+                        <td>{r.accuracy_percentage}%</td>
+                        <td className="score">{r.user_score}</td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+
+        {rows.length === 0 && (
+            <p className="empty-state">No members found in this group.</p>
+        )}
+    </div>
   );
 }
 

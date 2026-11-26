@@ -298,6 +298,34 @@
     font-weight: 700;
 }
 
+.leaderboard-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.leaderboard-table tbody tr:nth-child(even) {
+    background: rgba(95, 79, 63, 0.05);
+}
+
+.leaderboard-table tbody tr:hover {
+    background: rgba(255, 77, 0, 0.08);
+}
+
+.leaderboard-table td.rank {
+    font-size: 17px;
+}
+
+.leaderboard-table td:nth-child(3) {
+    font-weight: 600;
+}
+
+.no-teams {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 16px;
+}
+
 /* Responsive Design */
 @media (max-width: 850px) {
     .groups-container {
