@@ -1,0 +1,33 @@
+.result {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.score {
+  font-weight: 600;
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.correct {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.wrong {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.noPick {
+  background: var(--raised);
+  color: var(--subtle);
+}

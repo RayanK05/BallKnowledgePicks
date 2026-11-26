@@ -1,66 +1,84 @@
-import React from 'react'
-import { useState } from 'react'
-import { Link } from 'react-router-dom';
+import { useState } from "react";
+import TextInput from "./ui/TextInput.jsx";
+import PasswordInput from "./ui/PasswordInput.jsx";
+import styles from "./login.module.css";
 
 const Register = () => {
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [message, setMessage] = useState('');
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
 
-    async function handleSubmit(e) {
-    e.preventDefault();          
+  async function handleSubmit(e) {
+    e.preventDefault();
 
-    const res = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password }),
+    if (!username || !email || !password) {
+      setMessage("Please fill in all fields");
+      return;
+    }
+    if (username.length > 30) {
+      setMessage("Username must be 30 characters or less");
+      return;
+    }
+    if (password.length < 8) {
+      setMessage("Password must be at least 8 characters");
+      return;
+    }
+
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, email, password }),
     });
 
     const data = await res.json();
 
     if (data.ok) {
-        setMessage(`You have registered, ${data.user.username} with email ${data.user.email}!`);
+      setMessage(`Account created for ${data.user.username}! You can log in now.`);
     } else {
-        setMessage(data.error);
+      setMessage(data.error);
     }
-    }
+  }
 
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <h2>Register</h2>
+    <form onSubmit={handleSubmit} className={styles.form} noValidate>
+      <TextInput
+        id="reg-username"
+        label="Username"
+        value={username}
+        onChange={setUsername}
+        placeholder="e.g. buckets_23"
+        autoComplete="username"
+        helper="Up to 30 characters"
+      />
 
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
+      <TextInput
+        id="reg-email"
+        label="Email"
+        type="email"
+        value={email}
+        onChange={setEmail}
+        placeholder="you@school.edu"
+        autoComplete="email"
+      />
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+      <PasswordInput
+        id="reg-password"
+        label="Password"
+        value={password}
+        onChange={setPassword}
+        placeholder="Create a password"
+        autoComplete="new-password"
+        helper="At least 8 characters"
+      />
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+      <button type="submit" className={styles.submit}>
+        Create account
+      </button>
 
-        <button type="submit">Register</button>
-
-        <p>{message}</p>
-      </form>
-      <p>
-        Already have an account? <Link to="/Login">Login</Link>
-      </p>
-    </div>
-  )
-}
+      {message && <p className="error">{message}</p>}
+    </form>
+  );
+};
 
 export default Register;

@@ -22,6 +22,7 @@ CREATE TABLE GAMES (
     home_team_id  INT     NOT NULL REFERENCES TEAMS(team_id),
     away_team_id  INT     NOT NULL REFERENCES TEAMS(team_id),
     game_date     DATE    NOT NULL,
+    tipoff        TIMESTAMPTZ,
     winner_id     INT     REFERENCES TEAMS(team_id),
     home_score    INT     CHECK (home_score >= 0),
     away_score    INT     CHECK (away_score >= 0),
@@ -181,3 +182,31 @@ DROP TRIGGER IF EXISTS group_members_notify ON group_members;
 CREATE TRIGGER group_members_notify
 AFTER INSERT OR DELETE ON group_members
 FOR EACH ROW EXECUTE FUNCTION notify_group_member_change();
+-- ACTION: recalculate scores for everyone who picked this game
+CREATE OR REPLACE FUNCTION recalc_scores_for_game()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE users u
+  SET user_score = (
+    SELECT COUNT(*) * 10
+    FROM predictions p
+    JOIN games g ON p.game_id = g.game_id
+    WHERE p.user_id = u.user_id
+      AND p.predicted_winner_id = g.winner_id
+  )
+  WHERE u.user_id IN (
+    SELECT user_id FROM predictions WHERE game_id = NEW.game_id
+  );
+
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- EVENT + CONDITION (update): a game's winner changed
+DROP TRIGGER IF EXISTS trg_score_on_result_update ON games;
+CREATE TRIGGER trg_score_on_result_update
+AFTER UPDATE OF winner_id ON games
+FOR EACH ROW
+WHEN (NEW.winner_id IS DISTINCT FROM OLD.winner_id)
+EXECUTE FUNCTION recalc_scores_for_game();
