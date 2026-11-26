@@ -7,10 +7,14 @@ import Admin from "./components/admin";
 
 import Register from "./components/register";
 import AuthPage from "./pages/AuthPage";
+import StatsPage from "./pages/StatsPage";
+import Guesses from "./pages/Guesses";
 
 import ProtectedRoute from "./ProtectedRoute";
 
 function App() {
+  // for report provide the db code allongside a result
+  const isAuthenticated = localStorage.getItem("token");
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -21,17 +25,21 @@ function App() {
 
   return (
     <>
-      <nav>
-        <Link to="/">Home</Link> |
-        <Link to="/Teams">Teams</Link> |
-        <Link to="/Groups">Groups</Link> |
-        <button onClick={handleLogout}>Logout</button>
-      </nav>
+      {isAuthenticated && (
+        <>
+          <nav>
+            <Link to="/">Home</Link> |<Link to="/Teams">Teams</Link> |
+            <Link to="/Groups">Groups</Link> |<Link to="/stats">Stats</Link> |
+            <Link to="/Guesses">Guess</Link> |<button onClick={handleLogout}>Logout</button>
+          </nav>
+        </>
+      )}
 
       <Routes>
         {/* Public routes */}
         <Route path="/Login" element={<AuthPage />} />
         <Route path="/Register" element={<Register />} />
+        <Route path="/stats" element={<StatsPage />} />
 
         {/* Temporary development preview routes */}
         {import.meta.env.DEV && (
@@ -46,6 +54,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/Teams" element={<Teams />} />
           <Route path="/Groups" element={<Groups />} />
+          <Route path="/Guesses" element={<Guesses />} />
         </Route>
 
         {/* Page not found */}
