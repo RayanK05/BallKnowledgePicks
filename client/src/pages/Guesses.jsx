@@ -35,9 +35,15 @@ const Guesses = () => {
   const [status, setStatus] = useState("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [pickFilter, setPickFilter] = useState("all"); // "all" | "picked" | "unpicked"
 
-  const shownGames = status === "all" ? games : games.filter((game) => gameStatus(game) === status);
-
+  const shownGames = games
+    .filter((game) => status === "all" || gameStatus(game) === status)
+    .filter((game) => {
+      if (pickFilter === "all") return true;
+      const picked = picks.some((p) => p.game_id === game.game_id);
+      return pickFilter === "picked" ? picked : !picked;
+    });
   const loggedIn = !!localStorage.getItem("token");
 
   async function load() {
@@ -130,6 +136,8 @@ const Guesses = () => {
         onToChange={setTo}
         status={status}
         onStatusChange={setStatus}
+        pickFilter={pickFilter}
+        onPickFilterChange={setPickFilter}
       />
       <div className={styles.list}>
         {shownGames.map((game) => (

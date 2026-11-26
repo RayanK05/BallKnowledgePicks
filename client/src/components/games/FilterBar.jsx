@@ -12,6 +12,8 @@ const FilterBar = ({
   teams,
   team,
   onTeamChange,
+  pickFilter,
+  onPickFilterChange,
 }) => {
   return (
     <div>
@@ -47,6 +49,15 @@ const FilterBar = ({
           <option value="upcoming">Upcoming</option>
           <option value="live">Live</option>
           <option value="final">Final</option>
+        </select>
+      </label>
+
+      <label>
+        My picks
+        <select value={pickFilter} onChange={(e) => onPickFilterChange(e.target.value)}>
+          <option value="all">All</option>
+          <option value="picked">Picked</option>
+          <option value="unpicked">Not picked</option>
         </select>
       </label>
     </div>
