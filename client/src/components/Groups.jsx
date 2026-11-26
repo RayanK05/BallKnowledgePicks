@@ -116,6 +116,51 @@ function Groups(){
         await load();
     }
 
+    const handleGroupUpdate = async (msg) => {
+        if (msg.type !== "group_deleted" && msg.type !== "left_group") {
+            return;
+        }
+
+        const groupId = Number(msg.groupId);
+        const currentUserId = Number(user_id);
+
+        if (msg.type === "group_deleted") {
+            alert(`Group ${groupId} has been deleted.`);
+
+            setMyGroups((prevGroups) =>
+                prevGroups.filter(
+                    (group) => Number(group.group_id) !== groupId
+                )
+            );
+
+            if (Number(currentGroupViewing) === groupId) {
+                setcurrentGroupViewing(null);
+            }
+        }
+
+        if (msg.type === "left_group") {
+            // Only remove the group if the current user left
+            if (Number(msg.user_id) === currentUserId) {
+                alert(`You have left group ${groupId}.`);
+
+                setMyGroups((prevGroups) =>
+                    prevGroups.filter(
+                        (group) => Number(group.group_id) !== groupId
+                    )
+                );
+
+                if (Number(currentGroupViewing) === groupId) {
+                    setcurrentGroupViewing(null);
+                }
+            } else {
+                alert(`User ${msg.user_id} has left group ${groupId}.`);
+            }
+        }
+
+        // Reload groups to retrieve updated membership and admin roles
+        await load();
+    };
+
     return(
         <div className="groups-page">
             <div className="groups-container">
@@ -204,15 +249,24 @@ function Groups(){
                                 <button className="secondary-button" onClick={() => leaveGroup(currentGroupViewing)}>
                                     Leave Group
                                 </button>
-
-                                <button className="danger-button" onClick={() => deleteGroup(currentGroupViewing)}>
-                                    Delete Group
-                                </button>
+                                {myGroups.find(
+                                    (group) =>
+                                        group.group_id === Number(currentGroupViewing) &&
+                                        group.role === "admin"
+                                ) && (
+                                    <button
+                                        className="danger-button"
+                                        onClick={() => deleteGroup(currentGroupViewing)}
+                                    >
+                                        Delete Group
+                                    </button>
+                                )}
+                                
                             </div>
                         </div>
 
                         {currentGroupViewing && (
-                            <GroupLeaderboard key={currentGroupViewing} groupId={currentGroupViewing} />
+                            <GroupLeaderboard key={currentGroupViewing} groupId={currentGroupViewing} onGroupDeleted={handleGroupUpdate}/>
                         )}
                     </section>
 

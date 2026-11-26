@@ -320,38 +320,120 @@ app.post("/api/joinGroup", authenticateToken, async (req, res) => {
   }
 });
 
+
 app.post("/api/leaveGroup", authenticateToken, async (req, res) => {
+  const user_id = req.user.user_id;
+  const group_id = Number(req.body.group_id);
+
+  if (!Number.isInteger(group_id)) {
+    return res.status(400).json({
+      ok: false,
+      message: "Invalid group id."
+    });
+  }
+
+  const client = await db.connect();
+
   try {
-    const user_id = req.user.user_id;
-    const group_id = Number(req.body.group_id);
+    await client.query("BEGIN");
 
-    if (!Number.isInteger(group_id)) {
-      return res.status(400).json({ ok: false, message: "Invalid group id." });
-    }
-
-    const result = await db.query(
-      `DELETE FROM group_members
+    // Check whether the leaving user is an admin
+    const memberResult = await client.query(
+      `SELECT role
+       FROM group_members
        WHERE group_id = $1 AND user_id = $2
-       RETURNING group_id`,
-      [group_id, user_id],
+       FOR UPDATE`,
+      [group_id, user_id]
     );
 
-    // nothing deleted means they were never a member of this group
-    if (result.rows.length === 0) {
+    if (memberResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+
       return res.status(404).json({
         ok: false,
-        message: "You are not a member of this group.",
+        message: "You are not a member of this group."
       });
     }
 
-    // stop this user's open sockets from receiving the group's live updates
-    for (const [, socket] of io.sockets.sockets) {
-      if (socket.userId === user_id) socket.leave(`group_${group_id}`);
+    const isAdmin = memberResult.rows[0].role === "admin";
+
+    // If admin is leaving, promote another member
+    if (isAdmin) {
+      const nextAdmin = await client.query(
+        `SELECT user_id
+         FROM group_members
+         WHERE group_id = $1 AND user_id <> $2
+         ORDER BY user_id ASC
+         LIMIT 1
+         FOR UPDATE`,
+        [group_id, user_id]
+      );
+
+      if (nextAdmin.rows.length > 0) {
+        await client.query(
+          `UPDATE group_members
+           SET role = 'admin'
+           WHERE group_id = $1 AND user_id = $2`,
+          [group_id, nextAdmin.rows[0].user_id]
+        );
+      }
     }
 
-    return res.json({ ok: true, group_id });
+    // Remove the leaving user
+    await client.query(
+      `DELETE FROM group_members
+       WHERE group_id = $1 AND user_id = $2`,
+      [group_id, user_id]
+    );
+
+    // If no members remain, delete the group
+    const remainingMembers = await client.query(
+      `SELECT COUNT(*) 
+       FROM group_members
+       WHERE group_id = $1`,
+      [group_id]
+    );
+
+    const groupDeleted = Number(remainingMembers.rows[0].count) === 0;
+
+    if (groupDeleted) {
+      await client.query(
+        `DELETE FROM groups WHERE group_id = $1`,
+        [group_id]
+      );
+    }
+
+    await client.query("COMMIT");
+
+    // Remove leaving user's sockets from the group room
+    for (const [, socket] of io.sockets.sockets) {
+      if (socket.userId === user_id) {
+        socket.leave(`group_${group_id}`);
+      }
+    }
+
+    // Broadcast event to remaining group members
+    io.to(`group_${group_id}`).emit("group_event", {
+      type: groupDeleted ? "group_deleted" : "left_group",
+      groupId: group_id,
+      user_id
+    });
+
+    return res.json({
+      ok: true,
+      group_id,
+      group_deleted: groupDeleted
+    });
+
   } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message });
+    await client.query("ROLLBACK");
+
+    return res.status(500).json({
+      ok: false,
+      error: err.message
+    });
+  } finally {
+    client.release();
   }
 });
 
@@ -359,7 +441,7 @@ app.post("/api/leaveGroup", authenticateToken, async (req, res) => {
 app.get("/api/myGroups", authenticateToken, async (req, res) => {
   try {
     const { rows } = await db.query(
-      `SELECT g.group_id, g.group_name
+      `SELECT g.group_id, g.group_name, gm.role
        FROM group_members gm
        JOIN groups g ON g.group_id = gm.group_id
        WHERE gm.user_id = $1
@@ -377,11 +459,18 @@ app.get("/api/groups/:groupId/leaderboard", authenticateToken, async (req, res) 
   const groupId = Number(req.params.groupId);
   try {
     const { rows } = await db.query(
-      `SELECT u.user_id, u.username, u.user_score
-       FROM group_members gm
-       JOIN users u ON u.user_id = gm.user_id
-       WHERE gm.group_id = $1
-       ORDER BY u.user_score DESC, u.username`,
+      `SELECT
+          u.user_id,
+          u.username,
+          u.user_score,
+          COALESCE(upa.accuracy_percentage, 0) AS accuracy_percentage
+      FROM group_members gm
+      JOIN users u
+          ON u.user_id = gm.user_id
+      LEFT JOIN UserPredictionAccuracy upa
+          ON upa.user_id = u.user_id
+      WHERE gm.group_id = $1
+      ORDER BY u.user_score DESC, u.username`,
       [groupId],
     );
     res.json(rows);
@@ -404,7 +493,7 @@ app.post("/api/createGroup", authenticateToken, async (req, res) => {
       "INSERT INTO groups (group_name) VALUES ($1) RETURNING group_id, group_name",
       [name],
     );
-    await client.query("INSERT INTO group_members (group_id, user_id) VALUES ($1, $2)", [
+    await client.query("INSERT INTO group_members (group_id, user_id, role) VALUES ($1, $2, 'admin')", [
       rows[0].group_id,
       req.user.user_id,
     ]);
@@ -420,6 +509,7 @@ app.post("/api/createGroup", authenticateToken, async (req, res) => {
 
 app.post("/api/deleteGroup", authenticateToken, async (req, res) => {
   try {
+    const user_id = req.user.user_id;
     const group_id = Number(req.body.group_id);
     if (!Number.isInteger(group_id)) {
       return res.status(400).json({ ok: false, message: "Invalid group id." });
@@ -429,12 +519,16 @@ app.post("/api/deleteGroup", authenticateToken, async (req, res) => {
       // add user roles
       `DELETE FROM groups
        WHERE group_id = $1
+         AND EXISTS (
+           SELECT 1 FROM group_members
+           WHERE group_id = $1 AND user_id = $2 AND role = 'admin'
+         )
        RETURNING group_id`,
-      [group_id],
+      [group_id, user_id],
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ ok: false, message: "This group does not exist." });
+      return res.status(404).json({ ok: false, message: "Group not found, or you are not an admin of it." });
     }
 
     const room = `group_${group_id}`;

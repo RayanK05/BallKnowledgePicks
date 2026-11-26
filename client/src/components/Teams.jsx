@@ -11,6 +11,7 @@ function Teams(){
     const [loadStatus, setLoadedStatus] = useState("loading");
     const [following, setFollowing] = useState([]);
     const [activeTab, setActiveTab] = useState("teams");
+    const [teamSearch, setTeamSearch] = useState("");
 
     useEffect(() => {
       const load = async () => {
@@ -102,6 +103,14 @@ function Teams(){
       return data;
     }
 
+    const filteredTeams = (teams.teams || []).filter((team) => {
+        const search = teamSearch.toLowerCase().trim();
+
+        return (
+            team.team_name.toLowerCase().includes(search)
+        );
+    });
+
     if (loadStatus === "loading") return <p>Loading...</p>;
     if (loadStatus === "error") return <p>error connecting</p>
 
@@ -134,58 +143,66 @@ function Teams(){
                   type="text"
                   placeholder="⌕  Search teams..."
                   className="team-search"
+                  value={teamSearch}
+                  onChange={(e) => setTeamSearch(e.target.value)}
                 />
               
                 <span className="following-count">
                   Following {following.following?.length || 0} of {teams.teams.length}
                 </span>
               </div>
-              <div className="team-grid">
-                {teams.teams.map((team) => {
-                    const isFollowing = following.following?.some(
-                      (item) => item.team_id === team.team_id
-                    );
+             <div className="team-grid">
+                {filteredTeams.length > 0 ? (
+                    filteredTeams.map((team) => {
+                        const isFollowing = following.following?.some(
+                            (item) => item.team_id === team.team_id
+                        );
 
-                    const notificationsOn = following.following?.find(
-                      (item) => item.team_id === team.team_id
-                    )?.notifications_on;
+                        const notificationsOn = following.following?.find(
+                            (item) => item.team_id === team.team_id
+                        )?.notifications_on;
 
-                    return (
-                      <div className="team-card" key={team.team_id}>
+                        return (
+                            <div className="team-card" key={team.team_id}>
 
-                        <div className="team-info">
-                          <div className="team-logo">
-                            {"PLH"}
-                          </div>
+                                <div className="team-info">
+                                    <div className="team-logo">
+                                        {"PLH"}
+                                    </div>
 
-                          <div>
-                            <span className="team-city">{team.city}</span>
-                            <h3>{team.team_name}</h3>
-                          </div>
-                        </div>
+                                    <div>
+                                        <span className="team-city">{team.city}</span>
+                                        <h3>{team.team_name}</h3>
+                                    </div>
+                                </div>
 
-                        <button
-                          className={isFollowing ? "followed-button" : "follow-button"}
-                          onClick={() => follow(team.team_id)}
-                        >
-                          {isFollowing ? "✓ Following · Unfollow" : "+ Follow"}
-                        </button>
+                                <button
+                                    className={isFollowing ? "followed-button" : "follow-button"}
+                                    onClick={() => follow(team.team_id)}
+                                >
+                                    {isFollowing ? "✓ Following · Unfollow" : "+ Follow"}
+                                </button>
 
-                        {isFollowing && (
-                          <div className="notification-row">
-                            <span>Notifications {notificationsOn ? "on" : "off"}</span>
+                                {isFollowing && (
+                                    <div className="notification-row">
+                                        <span>Notifications {notificationsOn ? "on" : "off"}</span>
 
-                            <input
-                              type="checkbox"
-                              checked={notificationsOn}
-                              onChange={() => notificationUpdate(team.team_id)}
-                            />
-                          </div>
-                        )}
-                    </div>
-                  );
-                })}
-              </div>
+                                        <input
+                                            type="checkbox"
+                                            checked={notificationsOn}
+                                            onChange={() => notificationUpdate(team.team_id)}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })
+                ) : (
+                    <p className="no-teams">
+                        No teams found matching "{teamSearch}".
+                    </p>
+                )}
+            </div>
             </>
           )}
           {activeTab === "notifications" && (
