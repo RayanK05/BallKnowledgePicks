@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 
 function App() {
   // for report provide the db code allongside a result
+  const isAuthenticated = localStorage.getItem("token");
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -24,11 +25,15 @@ function App() {
 
   return (
     <>
-      <nav>
-        <Link to="/">Home</Link> |<Link to="/Teams">Teams</Link> |<Link to="/Groups">Groups</Link> |<Link to="/stats">Stats</Link> |
-        <Link to="/">Home</Link> |<Link to="/Teams">Teams</Link> |<Link to="/Groups">Groups</Link> | <Link to="/Guesses">Guess</Link> | 
-        <button onClick={handleLogout}>Logout</button>
-      </nav>
+      {isAuthenticated && (
+        <>
+          <nav>
+            <Link to="/">Home</Link> |<Link to="/Teams">Teams</Link> |
+            <Link to="/Groups">Groups</Link> |<Link to="/stats">Stats</Link> |
+            <Link to="/Guesses">Guess</Link> |<button onClick={handleLogout}>Logout</button>
+          </nav>
+        </>
+      )}
 
       <Routes>
         {/* Public routes */}
@@ -41,7 +46,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/Teams" element={<Teams />} />
           <Route path="/Groups" element={<Groups />} />
-          <Route path="/Guesses" element={<Guesses/>}/>
+          <Route path="/Guesses" element={<Guesses />} />
         </Route>
 
         <Route path="*" element={<p>Page not found</p>} />
