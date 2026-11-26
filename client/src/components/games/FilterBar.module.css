@@ -1,0 +1,49 @@
+.bar {
+  display: flex;
+  flex-wrap: wrap; /* wraps onto a second line on small screens */
+  align-items: flex-end;
+  gap: 16px;
+  padding: 16px 20px;
+  margin: 20px 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.field {
+  display: flex;
+  flex-direction: column; /* label text on top, input below */
+  gap: 6px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.wide {
+  flex: 2; /* team dropdown gets more room */
+  min-width: 200px;
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.control {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.control:focus {
+  outline: none;
+  border-color: var(--accent);
+}
