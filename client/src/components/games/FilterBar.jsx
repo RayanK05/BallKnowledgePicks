@@ -1,6 +1,4 @@
-// import styles from "./FilterBar.module.css";
-
-// TODO: hard-coded for now, later load from /api/teams
+import styles from "./FilterBar.module.css";
 
 const FilterBar = ({
   status,
@@ -16,11 +14,15 @@ const FilterBar = ({
   onPickFilterChange,
 }) => {
   return (
-    <div>
+    <div className={styles.bar}>
       {/* Team */}
-      <label>
-        Team
-        <select value={team} onChange={(e) => onTeamChange(e.target.value)}>
+      <label className={`${styles.field} ${styles.wide}`}>
+        <span className={styles.label}>Team</span>
+        <select
+          className={styles.control}
+          value={team}
+          onChange={(e) => onTeamChange(e.target.value)}
+        >
           <option value="">All teams</option>
           {teams.map((t) => (
             <option key={t.team_id} value={t.team_id}>
@@ -31,20 +33,34 @@ const FilterBar = ({
       </label>
 
       {/* Dates */}
-      <label>
-        From
-        <input type="date" value={from} onChange={(e) => onFromChange(e.target.value)} />
+      <label className={styles.field}>
+        <span className={styles.label}>From</span>
+        <input
+          className={styles.control}
+          type="date"
+          value={from}
+          onChange={(e) => onFromChange(e.target.value)}
+        />
       </label>
 
-      <label>
-        To
-        <input type="date" value={to} onChange={(e) => onToChange(e.target.value)} />
+      <label className={styles.field}>
+        <span className={styles.label}>To</span>
+        <input
+          className={styles.control}
+          type="date"
+          value={to}
+          onChange={(e) => onToChange(e.target.value)}
+        />
       </label>
 
       {/* Status */}
-      <label>
-        Status
-        <select value={status} onChange={(e) => onStatusChange(e.target.value)}>
+      <label className={styles.field}>
+        <span className={styles.label}>Status</span>
+        <select
+          className={styles.control}
+          value={status}
+          onChange={(e) => onStatusChange(e.target.value)}
+        >
           <option value="all">All</option>
           <option value="upcoming">Upcoming</option>
           <option value="live">Live</option>
@@ -52,9 +68,14 @@ const FilterBar = ({
         </select>
       </label>
 
-      <label>
-        My picks
-        <select value={pickFilter} onChange={(e) => onPickFilterChange(e.target.value)}>
+      {/* My picks */}
+      <label className={styles.field}>
+        <span className={styles.label}>My picks</span>
+        <select
+          className={styles.control}
+          value={pickFilter}
+          onChange={(e) => onPickFilterChange(e.target.value)}
+        >
           <option value="all">All</option>
           <option value="picked">Picked</option>
           <option value="unpicked">Not picked</option>
