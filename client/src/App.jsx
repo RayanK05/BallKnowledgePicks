@@ -1,17 +1,16 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, useNavigate } from "react-router-dom";
+
 import Teams from "./components/Teams";
 import Home from "./components/Home";
 import Groups from "./components/Groups";
+import Admin from "./components/admin";
 
-import Login from "./components/login";
 import Register from "./components/register";
 import AuthPage from "./pages/AuthPage";
 
 import ProtectedRoute from "./ProtectedRoute";
-import { useNavigate } from "react-router-dom";
 
 function App() {
-  // for report provide the db code allongside a result
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -23,7 +22,9 @@ function App() {
   return (
     <>
       <nav>
-        <Link to="/">Home</Link> |<Link to="/Teams">Teams</Link> |<Link to="/Groups">Groups</Link> |
+        <Link to="/">Home</Link> |
+        <Link to="/Teams">Teams</Link> |
+        <Link to="/Groups">Groups</Link> |
         <button onClick={handleLogout}>Logout</button>
       </nav>
 
@@ -32,6 +33,14 @@ function App() {
         <Route path="/Login" element={<AuthPage />} />
         <Route path="/Register" element={<Register />} />
 
+        {/* Temporary development preview routes */}
+        {import.meta.env.DEV && (
+          <>
+            <Route path="/home-preview" element={<Home />} />
+            <Route path="/admin-preview" element={<Admin />} />
+          </>
+        )}
+
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Home />} />
@@ -39,6 +48,7 @@ function App() {
           <Route path="/Groups" element={<Groups />} />
         </Route>
 
+        {/* Page not found */}
         <Route path="*" element={<p>Page not found</p>} />
       </Routes>
     </>

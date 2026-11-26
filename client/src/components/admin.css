@@ -1,0 +1,251 @@
+.admin-dashboard {
+    background: #121214;
+    color: #f4f4f5;
+    min-height: 100vh;
+    padding: 40px;
+    font-family: Arial, sans-serif;
+}
+
+.admin-dashboard * {
+    box-sizing: border-box;
+}
+
+.admin-header {
+    margin-bottom: 30px;
+}
+
+.admin-label {
+    color: #ff4f00;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.admin-header h1 {
+    font-size: 36px;
+    margin: 10px 0;
+}
+
+.admin-header p:not(.admin-label) {
+    color: #a1a1aa;
+}
+
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.admin-card {
+    background: #1c1c1f;
+    border: 1px solid #303034;
+    border-radius: 14px;
+    padding: 25px;
+    margin-bottom: 25px;
+}
+
+.admin-card h2 {
+    margin: 0 0 15px;
+    font-size: 23px;
+}
+
+.admin-stats .admin-card span {
+    color: #a1a1aa;
+    font-size: 14px;
+}
+
+.admin-stats .admin-card h2 {
+    color: #ff4f00;
+    font-size: 36px;
+    margin: 12px 0 0;
+}
+
+.admin-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.admin-section-header h2 {
+    margin: 0;
+}
+
+.admin-section-header p {
+    color: #a1a1aa;
+    font-size: 14px;
+}
+
+.admin-dashboard button {
+    background: #27272a;
+    border: 1px solid #3f3f46;
+    color: white;
+    border-radius: 7px;
+    padding: 10px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.admin-dashboard button:hover {
+    border-color: #ff4f00;
+}
+
+.admin-dashboard button.admin-primary {
+    background: #ff4f00;
+    border-color: #ff4f00;
+    font-weight: bold;
+}
+
+.admin-dashboard button.admin-primary:hover {
+    background: #e64700;
+}
+
+.admin-dashboard button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.admin-dashboard button.admin-delete {
+    color: #ff6b6b;
+    border-color: #713b3b;
+}
+
+.admin-dashboard button.admin-delete:hover {
+    background: #713b3b;
+    color: white;
+}
+
+.admin-sync-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    border-top: 1px solid #303034;
+    padding-top: 20px;
+    color: #a1a1aa;
+    font-size: 14px;
+}
+
+.admin-dashboard input,
+.admin-dashboard select {
+    background: #27272a;
+    color: white;
+    border: 1px solid #3f3f46;
+    border-radius: 7px;
+    padding: 12px;
+    font-size: 14px;
+    min-width: 0;
+}
+
+.admin-dashboard input:focus,
+.admin-dashboard select:focus {
+    outline: 1px solid #ff4f00;
+}
+
+.admin-search {
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.admin-table-wrapper {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.admin-table th {
+    color: #a1a1aa;
+    font-size: 13px;
+    font-weight: normal;
+    background: #27272a;
+    padding: 15px;
+}
+
+.admin-table td {
+    padding: 18px 15px;
+    border-bottom: 1px solid #303034;
+    font-size: 14px;
+}
+
+.admin-table tr:hover td {
+    background: #222225;
+}
+
+.admin-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-final {
+    color: #3dd68c;
+}
+
+.admin-upcoming {
+    color: #ffb347;
+}
+
+.admin-form {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    background: #222225;
+    border: 1px solid #3f3f46;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.admin-form h3 {
+    margin: 0 0 10px;
+}
+
+.admin-form label {
+    color: #a1a1aa;
+    font-size: 14px;
+}
+
+.admin-form .admin-actions {
+    margin-top: 10px;
+}
+
+.admin-team-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.admin-team-form input {
+    flex: 1;
+}
+
+.admin-muted {
+    color: #a1a1aa;
+    font-size: 13px;
+}
+
+@media (max-width: 800px) {
+    .admin-dashboard {
+        padding: 20px;
+    }
+
+    .admin-stats {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .admin-section-header {
+        flex-wrap: wrap;
+    }
+
+    .admin-sync-info {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
