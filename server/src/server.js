@@ -207,4 +207,42 @@ app.get("/api/me", authenticateToken, async (req, res) => {
   }
 });
 
+<<<<<<< Updated upstream
 app.listen(3000, () => console.log('Running on http://localhost:3000'));
+=======
+app.use("/api/stats", require("./routes/stats"));
+
+// Retrieve unread notification count
+app.get(
+    "/api/notifications/unread",
+    authenticateToken,
+    async (req, res) => {
+        try {
+            const result = await db.query(`
+                SELECT COUNT(*)::int AS count
+                FROM notifications
+                WHERE user_id = $1
+                AND NOT is_read
+            `, [req.user.user_id]);
+
+            res.json({
+                ok: true,
+                count: result.rows[0].count
+            });
+
+        } catch (err) {
+            res.status(500).json({
+                ok: false,
+                error: "Unable to load notifications"
+            });
+        }
+    }
+);
+
+// Admin routes
+app.use("/api/admin", require("./routes/admin"));
+
+app.listen(3000, () => {
+    console.log("Running on http://localhost:3000");
+});
+>>>>>>> Stashed changes

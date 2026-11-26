@@ -1,182 +1,283 @@
-import { useState } from "react";
-import "./Admin.css";
+import { useEffect, useState } from "react";
+import { apiFetch } from "../api";
+import "./admin.css";
+
+const emptyGame = {
+    home_team_id: "",
+    away_team_id: "",
+    game_date: "",
+    tipoff: "",
+    home_score: "",
+    away_score: ""
+};
 
 function Admin() {
-    const [teams, setTeams] = useState([
-        { id: 1, name: "Toronto Raptors" },
-        { id: 2, name: "Boston Celtics" },
-        { id: 3, name: "Los Angeles Lakers" },
-        { id: 4, name: "New York Knicks" }
-    ]);
 
-    const [games, setGames] = useState([
-        {
-            id: 1,
-            home: "Toronto Raptors",
-            away: "Boston Celtics",
-            date: "2026-11-25",
-            homeScore: 108,
-            awayScore: 121,
-            status: "Final"
-        },
-        {
-            id: 2,
-            home: "Los Angeles Lakers",
-            away: "New York Knicks",
-            date: "2026-11-26",
-            homeScore: "",
-            awayScore: "",
-            status: "Upcoming"
-        }
-    ]);
+    const [teams, setTeams] = useState([]);
+    const [games, setGames] = useState([]);
+    const [summary, setSummary] = useState({});
 
-    const [search, setSearch] = useState("");
-    const [teamSearch, setTeamSearch] = useState("");
+    const [error, setError] = useState("");
+    const [message, setMessage] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [busy, setBusy] = useState(false);
+    const [allowed, setAllowed] = useState(false);
+
     const [teamName, setTeamName] = useState("");
     const [editingTeam, setEditingTeam] = useState(null);
+
+    const [gameForm, setGameForm] = useState(null);
     const [editingGame, setEditingGame] = useState(null);
-    const [showGameForm, setShowGameForm] = useState(false);
 
-    const emptyGame = {
-        home: "",
-        away: "",
-        date: "",
-        homeScore: "",
-        awayScore: "",
-        status: "Upcoming"
-    };
+    const [gameSearch, setGameSearch] = useState("");
+    const [teamSearch, setTeamSearch] = useState("");
 
-    const [gameForm, setGameForm] = useState(emptyGame);
+    const [season, setSeason] = useState(
+        new Date().getFullYear()
+    );
+
+    const [syncResult, setSyncResult] = useState(null);
+
+    // Make requests to Express
+    async function request(url, options) {
+        const result = await apiFetch(url, options);
+
+        if (!result.ok) {
+            throw new Error(result.error || "Request failed");
+        }
+
+        return result;
+    }
+
+    // Retrieve current database records
+    async function loadDashboard() {
+
+        const summaryData = await request("/api/admin/summary");
+
+        setAllowed(true);
+
+        const [teamsData, gamesData] = await Promise.all([
+            request("/api/teams"),
+            request("/api/games")
+        ]);
+
+        setTeams(teamsData.teams);
+        setGames(gamesData.games);
+        setSummary(summaryData.summary);
+    }
+
+    useEffect(() => {
+        loadDashboard()
+            .catch(err => setError(err.message))
+            .finally(() => setLoading(false));
+    }, []);
+
+    // Execute a database modification and refresh dashboard
+    async function performAction(callback) {
+
+        setBusy(true);
+        setError("");
+        setMessage("");
+
+        try {
+            await callback();
+
+            setMessage("Changes saved to database.");
+
+            await loadDashboard();
+
+        } catch (err) {
+            setError(err.message);
+
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    function writeRequest(url, method, body) {
+        return request(url, {
+            method,
+            ...(body ? {
+                body: JSON.stringify(body)
+            } : {})
+        });
+    }
+
+    // ================================
+    // TEAM FUNCTIONS
+    // ================================
 
     function saveTeam(e) {
+
         e.preventDefault();
 
-        if (!teamName.trim()) return;
+        performAction(async () => {
 
-        if (teams.some(team =>
-            team.name.toLowerCase() === teamName.trim().toLowerCase()
-            && team.id !== editingTeam
-        )) {
-            alert("This team already exists.");
-            return;
-        }
+            const url = editingTeam
+                ? `/api/admin/teams/${editingTeam}`
+                : "/api/admin/teams";
 
-        if (editingTeam !== null) {
-            const oldName = teams.find(
-                team => team.id === editingTeam
-            ).name;
-
-            setTeams(previous => previous.map(team =>
-                team.id === editingTeam
-                    ? { ...team, name: teamName.trim() }
-                    : team
-            ));
-
-            setGames(previous => previous.map(game => ({
-                ...game,
-                home: game.home === oldName
-                    ? teamName.trim() : game.home,
-                away: game.away === oldName
-                    ? teamName.trim() : game.away
-            })));
-        } else {
-            setTeams(previous => [
-                ...previous,
-                { id: Date.now(), name: teamName.trim() }
-            ]);
-        }
-
-        setTeamName("");
-        setEditingTeam(null);
-    }
-
-    function deleteTeam(team) {
-        if (games.some(game =>
-            game.home === team.name || game.away === team.name
-        )) {
-            alert("Cannot delete a team associated with a game.");
-            return;
-        }
-
-        if (window.confirm("Delete this team?")) {
-            setTeams(previous =>
-                previous.filter(t => t.id !== team.id)
+            await writeRequest(
+                url,
+                editingTeam ? "PUT" : "POST",
+                { team_name: teamName }
             );
-        }
+
+            setTeamName("");
+            setEditingTeam(null);
+        });
     }
+
+    function editTeam(team) {
+        setEditingTeam(team.team_id);
+        setTeamName(team.team_name);
+    }
+
+    function deleteTeam(teamId) {
+
+        if (!window.confirm("Delete this team?")) {
+            return;
+        }
+
+        performAction(() =>
+            writeRequest(
+                `/api/admin/teams/${teamId}`,
+                "DELETE"
+            )
+        );
+    }
+
+    // ================================
+    // GAME FUNCTIONS
+    // ================================
 
     function saveGame(e) {
+
         e.preventDefault();
 
-        if (gameForm.home === gameForm.away) {
-            alert("Select two different teams.");
-            return;
-        }
+        performAction(async () => {
 
-        if (gameForm.status === "Final" &&
-            (gameForm.homeScore === "" ||
-             gameForm.awayScore === "" ||
-             Number(gameForm.homeScore) === Number(gameForm.awayScore))) {
-            alert("Enter valid final scores with a winning team.");
-            return;
-        }
+            const url = editingGame
+                ? `/api/admin/games/${editingGame}`
+                : "/api/admin/games";
 
-        const savedGame = {
-            ...gameForm,
-            homeScore: gameForm.status === "Final"
-                ? Number(gameForm.homeScore) : "",
-            awayScore: gameForm.status === "Final"
-                ? Number(gameForm.awayScore) : ""
-        };
+            await writeRequest(
+                url,
+                editingGame ? "PUT" : "POST",
+                {
+                    ...gameForm,
+                    tipoff: gameForm.tipoff
+                        ? new Date(gameForm.tipoff).toISOString()
+                        : null
+                }
+            );
 
-        if (editingGame !== null) {
-            setGames(previous => previous.map(game =>
-                game.id === editingGame
-                    ? { ...savedGame, id: editingGame }
-                    : game
-            ));
-        } else {
-            setGames(previous => [
-                ...previous,
-                { ...savedGame, id: Date.now() }
-            ]);
-        }
-
-        setGameForm(emptyGame);
-        setEditingGame(null);
-        setShowGameForm(false);
+            setGameForm(null);
+            setEditingGame(null);
+        });
     }
 
     function editGame(game) {
-        setGameForm({ ...game });
-        setEditingGame(game.id);
-        setShowGameForm(true);
-    }
 
-    function deleteGame(id) {
-        if (window.confirm("Delete this game?")) {
-            setGames(previous =>
-                previous.filter(game => game.id !== id)
-            );
+        setEditingGame(game.game_id);
+
+        let tipoff = "";
+
+        if (game.tipoff) {
+            const date = new Date(game.tipoff);
+
+            tipoff = new Date(
+                date.getTime() -
+                date.getTimezoneOffset() * 60000
+            ).toISOString().slice(0, 16);
         }
+
+        setGameForm({
+            ...game,
+            game_date: String(game.game_date).slice(0, 10),
+            tipoff,
+            home_score: game.home_score ?? "",
+            away_score: game.away_score ?? ""
+        });
     }
 
-    function updateGameForm(e) {
+    function deleteGame(gameId) {
+
+        if (!window.confirm(
+            "Delete this game and its associated predictions? User scores will be recalculated."
+        )) {
+            return;
+        }
+
+        performAction(() =>
+            writeRequest(
+                `/api/admin/games/${gameId}`,
+                "DELETE"
+            )
+        );
+    }
+
+    function updateGameForm(field, value) {
         setGameForm(previous => ({
             ...previous,
-            [e.target.name]: e.target.value
+            [field]: value
         }));
     }
 
+    // ================================
+    // API SYNCHRONIZATION
+    // ================================
+
+    function synchronizeData() {
+
+        performAction(async () => {
+
+            const result = await writeRequest(
+                "/api/admin/sync",
+                "POST",
+                { season: Number(season) }
+            );
+
+            setSyncResult(result);
+        });
+    }
+
+    // ================================
+    // SEARCH AND FILTERING
+    // ================================
+
     const filteredGames = games.filter(game =>
-        `${game.home} ${game.away} ${game.date} ${game.status}`
+        `${game.home_team} ${game.away_team} ${game.game_date}`
             .toLowerCase()
-            .includes(search.toLowerCase())
+            .includes(gameSearch.toLowerCase())
     );
 
     const filteredTeams = teams.filter(team =>
-        team.name.toLowerCase().includes(teamSearch.toLowerCase())
+        team.team_name
+            .toLowerCase()
+            .includes(teamSearch.toLowerCase())
     );
+
+    // ================================
+    // LOADING AND ACCESS CONTROL
+    // ================================
+
+    if (loading) {
+        return (
+            <main className="admin-dashboard">
+                <h1>Loading administration...</h1>
+            </main>
+        );
+    }
+
+    if (!allowed) {
+        return (
+            <main className="admin-dashboard">
+                <h1>Admin access required</h1>
+                <p role="alert">{error}</p>
+            </main>
+        );
+    }
 
     return (
         <main className="admin-dashboard">
@@ -184,173 +285,291 @@ function Admin() {
             <header className="admin-header">
                 <p className="admin-label">ADMINISTRATION</p>
                 <h1>Admin Dashboard</h1>
-                <p>Manage teams, games and application data.</p>
+                <p>Manage teams, games and live database records.</p>
             </header>
 
+            {error && (
+                <p className="admin-error" role="alert">
+                    {error}
+                </p>
+            )}
+
+            {message && (
+                <p className="admin-success" role="status">
+                    {message}
+                </p>
+            )}
+
+            {/* Dashboard statistics */}
+
             <div className="admin-stats">
+
+                <div className="admin-card">
+                    <span>Total Users</span>
+                    <h2>{summary.users ?? "—"}</h2>
+                </div>
+
                 <div className="admin-card">
                     <span>Total Teams</span>
-                    <h2>{teams.length}</h2>
+                    <h2>{summary.teams ?? "—"}</h2>
                 </div>
 
                 <div className="admin-card">
                     <span>Total Games</span>
-                    <h2>{games.length}</h2>
+                    <h2>{summary.games ?? "—"}</h2>
                 </div>
 
                 <div className="admin-card">
                     <span>Completed Games</span>
-                    <h2>
-                        {games.filter(g => g.status === "Final").length}
-                    </h2>
+                    <h2>{summary.completed ?? "—"}</h2>
                 </div>
+
             </div>
 
+            {/* API Synchronization */}
+
             <section className="admin-card">
+
                 <div className="admin-section-header">
+
                     <div>
                         <h2>API Synchronization</h2>
-                        <p>Import NBA data from balldontlie.</p>
+                        <p>
+                            Import NBA teams and games from balldontlie.
+                        </p>
                     </div>
 
-                    <button className="admin-primary" disabled>
-                        Sync Data
-                    </button>
+                    <div className="admin-actions">
+
+                        <input
+                            type="number"
+                            aria-label="Season"
+                            value={season}
+                            onChange={e => setSeason(e.target.value)}
+                        />
+
+                        <button
+                            className="admin-primary"
+                            disabled={busy}
+                            onClick={synchronizeData}
+                        >
+                            Sync Data
+                        </button>
+
+                    </div>
+
                 </div>
 
                 <div className="admin-sync-info">
-                    <span>Teams added: 0</span>
-                    <span>Games added: 0</span>
-                    <span>Last sync: Never</span>
+
+                    <span>
+                        Teams added: {syncResult?.teams_added ?? 0}
+                    </span>
+
+                    <span>
+                        Games added: {syncResult?.games_added ?? 0}
+                    </span>
+
+                    <span>
+                        Games updated: {syncResult?.games_updated ?? 0}
+                    </span>
+
+                    <span>
+                        Last sync: {
+                            syncResult
+                                ? new Date(
+                                    syncResult.last_sync
+                                ).toLocaleString()
+                                : "Not yet synced this session"
+                        }
+                    </span>
+
                 </div>
 
-                <p className="admin-muted">
-                    API synchronization is not connected yet.
-                </p>
+                {busy && (
+                    <p className="admin-muted">
+                        Request in progress...
+                    </p>
+                )}
+
             </section>
+
+            {/* Games Manager */}
 
             <section className="admin-card">
 
                 <div className="admin-section-header">
+
                     <h2>Games Manager</h2>
 
                     <button
                         className="admin-primary"
+                        disabled={busy}
                         onClick={() => {
-                            setGameForm(emptyGame);
                             setEditingGame(null);
-                            setShowGameForm(true);
+                            setGameForm({ ...emptyGame });
                         }}
                     >
                         + Add Game
                     </button>
+
                 </div>
 
-                {showGameForm && (
-                    <form className="admin-form" onSubmit={saveGame}>
+                {gameForm && (
+
+                    <form
+                        className="admin-form"
+                        onSubmit={saveGame}
+                    >
 
                         <h3>
-                            {editingGame !== null
-                                ? "Edit Game" : "Add Game"}
+                            {editingGame ? "Edit Game" : "Add Game"}
                         </h3>
 
                         <label>Home Team</label>
+
                         <select
-                            name="home"
-                            value={gameForm.home}
-                            onChange={updateGameForm}
                             required
+                            value={gameForm.home_team_id}
+                            onChange={e =>
+                                updateGameForm(
+                                    "home_team_id",
+                                    e.target.value
+                                )
+                            }
                         >
                             <option value="">Select home team</option>
+
                             {teams.map(team => (
-                                <option key={team.id} value={team.name}>
-                                    {team.name}
+                                <option
+                                    key={team.team_id}
+                                    value={team.team_id}
+                                >
+                                    {team.team_name}
                                 </option>
                             ))}
+
                         </select>
 
                         <label>Away Team</label>
+
                         <select
-                            name="away"
-                            value={gameForm.away}
-                            onChange={updateGameForm}
                             required
+                            value={gameForm.away_team_id}
+                            onChange={e =>
+                                updateGameForm(
+                                    "away_team_id",
+                                    e.target.value
+                                )
+                            }
                         >
                             <option value="">Select away team</option>
+
                             {teams.map(team => (
-                                <option key={team.id} value={team.name}>
-                                    {team.name}
+                                <option
+                                    key={team.team_id}
+                                    value={team.team_id}
+                                >
+                                    {team.team_name}
                                 </option>
                             ))}
+
                         </select>
 
                         <label>Game Date</label>
+
                         <input
-                            type="date"
-                            name="date"
-                            value={gameForm.date}
-                            onChange={updateGameForm}
                             required
+                            type="date"
+                            value={gameForm.game_date}
+                            onChange={e =>
+                                updateGameForm(
+                                    "game_date",
+                                    e.target.value
+                                )
+                            }
                         />
 
-                        <label>Status</label>
-                        <select
-                            name="status"
-                            value={gameForm.status}
-                            onChange={updateGameForm}
-                        >
-                            <option>Upcoming</option>
-                            <option>Final</option>
-                        </select>
+                        <label>Tipoff Time</label>
 
-                        {gameForm.status === "Final" && (
-                            <>
-                                <label>Home Score</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    name="homeScore"
-                                    value={gameForm.homeScore}
-                                    onChange={updateGameForm}
-                                    required
-                                />
+                        <input
+                            type="datetime-local"
+                            value={gameForm.tipoff}
+                            onChange={e =>
+                                updateGameForm(
+                                    "tipoff",
+                                    e.target.value
+                                )
+                            }
+                        />
 
-                                <label>Away Score</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    name="awayScore"
-                                    value={gameForm.awayScore}
-                                    onChange={updateGameForm}
-                                    required
-                                />
-                            </>
-                        )}
+                        <label>
+                            Home Score (leave blank if unfinished)
+                        </label>
+
+                        <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={gameForm.home_score}
+                            onChange={e =>
+                                updateGameForm(
+                                    "home_score",
+                                    e.target.value
+                                )
+                            }
+                        />
+
+                        <label>
+                            Away Score (leave blank if unfinished)
+                        </label>
+
+                        <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={gameForm.away_score}
+                            onChange={e =>
+                                updateGameForm(
+                                    "away_score",
+                                    e.target.value
+                                )
+                            }
+                        />
 
                         <div className="admin-actions">
-                            <button className="admin-primary" type="submit">
+
+                            <button
+                                type="submit"
+                                className="admin-primary"
+                                disabled={busy}
+                            >
                                 Save Game
                             </button>
 
                             <button
                                 type="button"
-                                onClick={() => setShowGameForm(false)}
+                                onClick={() => setGameForm(null)}
                             >
                                 Cancel
                             </button>
+
                         </div>
+
                     </form>
                 )}
 
                 <input
                     className="admin-search"
                     placeholder="Search games..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
+                    value={gameSearch}
+                    onChange={e => setGameSearch(e.target.value)}
                 />
 
                 <div className="admin-table-wrapper">
+
                     <table className="admin-table">
+
                         <thead>
                             <tr>
                                 <th>Matchup</th>
@@ -363,76 +582,114 @@ function Admin() {
                         </thead>
 
                         <tbody>
+
                             {filteredGames.map(game => (
-                                <tr key={game.id}>
-                                    <td>{game.home} vs {game.away}</td>
-                                    <td>{game.date}</td>
+                                <tr key={game.game_id}>
 
                                     <td>
-                                        {game.status === "Final"
-                                            ? `${game.homeScore} - ${game.awayScore}`
-                                            : "—"}
+                                        {game.home_team} vs {game.away_team}
+                                    </td>
+
+                                    <td>
+                                        {String(game.game_date).slice(0, 10)}
+                                    </td>
+
+                                    <td>
+                                        {game.home_score ?? "—"} -{" "}
+                                        {game.away_score ?? "—"}
                                     </td>
 
                                     <td>
                                         <span className={
-                                            game.status === "Final"
+                                            game.winner_id != null
                                                 ? "admin-final"
                                                 : "admin-upcoming"
                                         }>
-                                            {game.status}
+                                            {game.winner_id != null
+                                                ? "Final"
+                                                : "Unfinished"}
                                         </span>
                                     </td>
 
                                     <td>
-                                        {game.status === "Final"
-                                            ? Number(game.homeScore) > Number(game.awayScore)
-                                                ? game.home
-                                                : game.away
-                                            : "—"}
+                                        {game.winner_id == null
+                                            ? "—"
+                                            : Number(game.winner_id) ===
+                                              Number(game.home_team_id)
+                                                ? game.home_team
+                                                : game.away_team}
                                     </td>
 
                                     <td>
+
                                         <div className="admin-actions">
-                                            <button onClick={() => editGame(game)}>
+
+                                            <button
+                                                disabled={busy}
+                                                onClick={() => editGame(game)}
+                                            >
                                                 Edit
                                             </button>
 
                                             <button
+                                                disabled={busy}
                                                 className="admin-delete"
-                                                onClick={() => deleteGame(game.id)}
+                                                onClick={() =>
+                                                    deleteGame(game.game_id)
+                                                }
                                             >
                                                 Delete
                                             </button>
+
                                         </div>
+
                                     </td>
+
                                 </tr>
                             ))}
+
                         </tbody>
+
                     </table>
 
                     {filteredGames.length === 0 && (
-                        <p className="admin-muted">No games found.</p>
+                        <p className="admin-muted">
+                            No games found.
+                        </p>
                     )}
+
                 </div>
+
             </section>
 
+            {/* Teams Manager */}
+
             <section className="admin-card">
+
                 <h2>Teams Manager</h2>
 
-                <form className="admin-team-form" onSubmit={saveTeam}>
+                <form
+                    className="admin-team-form"
+                    onSubmit={saveTeam}
+                >
+
                     <input
+                        required
+                        maxLength={60}
                         placeholder="Enter team name"
                         value={teamName}
                         onChange={e => setTeamName(e.target.value)}
-                        required
                     />
 
-                    <button className="admin-primary" type="submit">
-                        {editingTeam !== null ? "Save Team" : "+ Add Team"}
+                    <button
+                        type="submit"
+                        className="admin-primary"
+                        disabled={busy}
+                    >
+                        {editingTeam ? "Save Team" : "+ Add Team"}
                     </button>
 
-                    {editingTeam !== null && (
+                    {editingTeam && (
                         <button
                             type="button"
                             onClick={() => {
@@ -443,6 +700,7 @@ function Admin() {
                             Cancel
                         </button>
                     )}
+
                 </form>
 
                 <input
@@ -453,7 +711,9 @@ function Admin() {
                 />
 
                 <div className="admin-table-wrapper">
+
                     <table className="admin-table">
+
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -463,36 +723,53 @@ function Admin() {
                         </thead>
 
                         <tbody>
+
                             {filteredTeams.map(team => (
-                                <tr key={team.id}>
-                                    <td>{team.id}</td>
-                                    <td>{team.name}</td>
+                                <tr key={team.team_id}>
+
+                                    <td>{team.team_id}</td>
+                                    <td>{team.team_name}</td>
+
                                     <td>
+
                                         <div className="admin-actions">
-                                            <button onClick={() => {
-                                                setEditingTeam(team.id);
-                                                setTeamName(team.name);
-                                            }}>
+
+                                            <button
+                                                disabled={busy}
+                                                onClick={() => editTeam(team)}
+                                            >
                                                 Edit
                                             </button>
 
                                             <button
+                                                disabled={busy}
                                                 className="admin-delete"
-                                                onClick={() => deleteTeam(team)}
+                                                onClick={() =>
+                                                    deleteTeam(team.team_id)
+                                                }
                                             >
                                                 Delete
                                             </button>
+
                                         </div>
+
                                     </td>
+
                                 </tr>
                             ))}
+
                         </tbody>
+
                     </table>
 
                     {filteredTeams.length === 0 && (
-                        <p className="admin-muted">No teams found.</p>
+                        <p className="admin-muted">
+                            No teams found.
+                        </p>
                     )}
+
                 </div>
+
             </section>
 
         </main>
