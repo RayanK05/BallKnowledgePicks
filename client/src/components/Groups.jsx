@@ -25,17 +25,30 @@ function Groups(){
 
             setMyGroups(data);
 
-            console.log(data);
-
             return data;
         }
-        
+
     useEffect(() => {
         load();
     },[token]);
 
     const createGroup = async (group_name) => {
+        const response = await fetch('/api/createGroup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ group_name })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error("Failed to join group");
+        }
         
+        await load();
     }
 
     const joinGroup = async (group_id) => {
@@ -49,8 +62,7 @@ function Groups(){
         });
 
         const data = await response.json().catch(() => ({}));
-            
-        console.log(data)
+
         if (!response.ok) {
             throw new Error("Failed to join group");
         }
@@ -59,11 +71,49 @@ function Groups(){
     }
 
     const leaveGroup = async (group_id) => {
+        const response = await fetch('/api/leaveGroup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ group_id })
+        });
 
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error("Failed to join group");
+        }
+
+        if (currentGroupViewing === group_id) {
+            setcurrentGroupViewing(null);   // match the exact name from your useState line
+        }
+        
+        await load();
     }
 
-    const viewGroupData = () => {
+    const deleteGroup = async (group_id) => {
+        const response = await fetch('/api/deleteGroup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ group_id })
+        });
 
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error("Failed to join group");
+        }
+
+        if (currentGroupViewing === group_id) {
+            setcurrentGroupViewing(null);   // match the exact name from your useState line
+        }
+        
+        await load();
     }
 
     return(
@@ -75,7 +125,7 @@ function Groups(){
 
                     {/* My Groups */}
                     <section className="group-card">
-                        <h2>My Groups</h2>
+                        <h2>My Groups viewing: {currentGroupViewing}</h2>
 
                         <div className="my-groups-list">
                             {myGroups.map((g) => (
@@ -151,20 +201,19 @@ function Groups(){
                             </div>
 
                             <div className="group-actions">
-                                <button className="secondary-button">
+                                <button className="secondary-button" onClick={() => leaveGroup(currentGroupViewing)}>
                                     Leave Group
                                 </button>
 
-                                <button className="danger-button">
+                                <button className="danger-button" onClick={() => deleteGroup(currentGroupViewing)}>
                                     Delete Group
                                 </button>
                             </div>
                         </div>
 
-                        <div className="leaderboard-content">
-                            <GroupLeaderboard groupId={currentGroupViewing} />
-                        </div>
-
+                        {currentGroupViewing && (
+                            <GroupLeaderboard key={currentGroupViewing} groupId={currentGroupViewing} />
+                        )}
                     </section>
 
                 </main>

@@ -304,29 +304,37 @@ app.post('/api/joinGroup', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/leaveGroup', authenticateToken, async (req, res) => {
-  try{
+  try {
     const user_id = req.user.user_id;
-    const { team_id } = req.body;
+    const group_id = Number(req.body.group_id);
+
+    if (!Number.isInteger(group_id)) {
+      return res.status(400).json({ ok: false, message: 'Invalid group id.' });
+    }
 
     const result = await db.query(
-      ``,
-      [user_id, team_id]
+      `DELETE FROM group_members
+       WHERE group_id = $1 AND user_id = $2
+       RETURNING group_id`,
+      [group_id, user_id]
     );
 
+    // nothing deleted means they were never a member of this group
     if (result.rows.length === 0) {
       return res.status(404).json({
         ok: false,
-        message: 'You are not following this team.'
+        message: 'You are not a member of this group.'
       });
     }
 
-    return res.json({
-      ok: true,
-      notifications_on: result.rows[0].notifications_on
-    });
-    
-  }catch(err){
-    res.status(500).json({ ok: false, error: err.message });
+    // stop this user's open sockets from receiving the group's live updates
+    for (const [, socket] of io.sockets.sockets) {
+      if (socket.userId === user_id) socket.leave(`group_${group_id}`);
+    }
+
+    return res.json({ ok: true, group_id });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
   }
 });
 
@@ -386,6 +394,38 @@ app.post("/api/createGroup", authenticateToken, async (req, res) => {
     res.status(500).json({ error: err.message });
   } finally {
     client.release();
+  }
+});
+
+app.post('/api/deleteGroup', authenticateToken, async (req, res) => {
+  try {
+    const group_id = Number(req.body.group_id);
+    if (!Number.isInteger(group_id)) {
+      return res.status(400).json({ ok: false, message: 'Invalid group id.' });
+    }
+
+    const result = await db.query(// add user roles
+      `DELETE FROM groups
+       WHERE group_id = $1
+       RETURNING group_id`,
+      [group_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ ok: false, message: 'This group does not exist.' });
+    }
+
+    const room = `group_${group_id}`;
+
+    // 1. tell everyone in the room so their screens can clear
+    io.to(room).emit("groupUpdate", { type: "group_deleted", groupId: group_id });
+
+    // 2. then remove every socket from the room
+    io.in(room).socketsLeave(room);
+
+    return res.json({ ok: true, group_id });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
   }
 });
 

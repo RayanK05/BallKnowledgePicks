@@ -45,23 +45,53 @@ function createEventListener(io) {
             [event.user_id]
           );
           rows.forEach((r) =>
-            broadcast(r.group_id, { type: "picks_changed", gameId: event.game_id })
+            broadcast(r.group_id, { 
+                type: "picks_changed",
+                gameId: event.game_id,
+                userId: event.user_id,
+                username: event.username,
+                operation: event.operation,
+            })
           );
         }
 
-        // a game finished, so scores changed
-        if (event.type === "game_final") {
-          const { rows } = await db.query(
-            `SELECT DISTINCT gm.group_id
-             FROM group_members gm
-             JOIN predictions p ON p.user_id = gm.user_id
-             WHERE p.game_id = $1`,
-            [event.game_id]
-          );
-          rows.forEach((r) =>
-            broadcast(r.group_id, { type: "leaderboard_changed", gameId: event.game_id })
-          );
+        if (event.type === "score") {
+            // every group this user belongs to gets told
+            const { rows } = await db.query(
+            "SELECT group_id FROM group_members WHERE user_id = $1",
+            [event.user_id]
+            );
+
+            rows.forEach((r) =>
+            broadcast(r.group_id, {
+                type: "leaderboard_changed",
+                userId: event.user_id,
+                userScore: event.user_score,
+            })
+            );
         }
+
+        if (event.type === "group_member") {
+            const room = `group_${event.group_id}`;
+
+            // tell everyone currently in the group
+            broadcast(event.group_id, {
+                type: "members_changed",
+                operation: event.operation,   // 'INSERT' or 'DELETE'
+                userId: event.user_id,
+                username: event.username,
+            });
+
+            if (event.operation === "DELETE") {
+                for (const [, socket] of io.sockets.sockets) {
+                    if (socket.userId === event.user_id) {
+                        socket.emit("groupUpdate", { type: "left_group", groupId: event.group_id });
+                        socket.leave(room);
+                    }
+                }
+            }
+        }
+
       } catch (err) {
         console.error("Notification handler failed:", err);
       }

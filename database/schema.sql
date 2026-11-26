@@ -76,6 +76,7 @@ ALTER TABLE notifications
   ADD CONSTRAINT uq_notifications_user_game_team_type
   UNIQUE (user_id, game_id, team_id, alert_type);
 
+
 -- create the trigger for game status changes
 CREATE OR REPLACE FUNCTION public.notify_game_final()
     RETURNS trigger
@@ -106,7 +107,12 @@ DROP TRIGGER IF EXISTS games_final_event ON games;
 CREATE OR REPLACE FUNCTION notify_prediction_change() RETURNS trigger AS $$
 BEGIN
   PERFORM pg_notify('db_events', json_build_object(
-    'type', 'prediction', 'user_id', NEW.user_id, 'game_id', NEW.game_id
+    'type', 'prediction',
+    'user_id', NEW.user_id,
+    'game_id', NEW.game_id,
+    'predicted_winner_id', NEW.predicted_winner_id,
+    'username', (SELECT username FROM users WHERE user_id = NEW.user_id),
+    'operation', TG_OP                     -- 'INSERT' or 'UPDATE'
   )::text);
   RETURN NEW;
 END;
@@ -131,3 +137,47 @@ AFTER UPDATE OF winner_id ON games
 FOR EACH ROW
 WHEN (OLD.winner_id IS NULL AND NEW.winner_id IS NOT NULL)
 EXECUTE FUNCTION notify_game_final_event();
+
+-- announce score changes
+CREATE OR REPLACE FUNCTION notify_score_change() RETURNS trigger AS $$
+BEGIN
+  PERFORM pg_notify('db_events', json_build_object(
+    'type', 'score',
+    'user_id', NEW.user_id,
+    'user_score', NEW.user_score
+  )::text);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- fire only when the value actually changes
+DROP TRIGGER IF EXISTS users_score_notify ON users;
+CREATE TRIGGER users_score_notify
+AFTER UPDATE OF user_score ON users
+FOR EACH ROW
+WHEN (OLD.user_score IS DISTINCT FROM NEW.user_score)
+EXECUTE FUNCTION notify_score_change();
+
+CREATE OR REPLACE FUNCTION notify_group_member_change() RETURNS trigger AS $$
+DECLARE
+  rec group_members;
+BEGIN
+  -- DELETE has no NEW row, so read from OLD there
+  IF TG_OP = 'DELETE' THEN rec := OLD; ELSE rec := NEW; END IF;
+
+  PERFORM pg_notify('db_events', json_build_object(
+    'type', 'group_member',
+    'operation', TG_OP,                       -- 'INSERT' = joined, 'DELETE' = left
+    'group_id', rec.group_id,
+    'user_id', rec.user_id,
+    'username', (SELECT username FROM users WHERE user_id = rec.user_id)
+  )::text);
+
+  RETURN NULL;   -- the return value is ignored for AFTER triggers
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS group_members_notify ON group_members;
+CREATE TRIGGER group_members_notify
+AFTER INSERT OR DELETE ON group_members
+FOR EACH ROW EXECUTE FUNCTION notify_group_member_change();
