@@ -63,6 +63,7 @@ const getBasketBallAPI = async (path, params) => {
       await sleep(15000);
       continue;
     }
+
     if (!res.ok) throw new Error(`API error ${res.status}`);
     return res.json();
   }
@@ -111,14 +112,14 @@ const seedGames = async () => {
       home_score = COALESCE(EXCLUDED.home_score, games.home_score),
       away_score = COALESCE(EXCLUDED.away_score, games.away_score)`,
       [
-        String(g.id), 
-        g.home_team.id,     
-        g.visitor_team.id,   
-        g.date,   
-        g.datetime,          
-        winnerId,            
-        homeScore,          
-        awayScore,         
+        String(g.id),
+        g.home_team.id,
+        g.visitor_team.id,
+        g.date,
+        g.datetime,
+        winnerId,
+        homeScore,
+        awayScore,
       ]
     );
 
@@ -554,5 +555,29 @@ app.get("/api/me", authenticateToken, async (req, res) => {
 });
 
 app.use("/api/stats", require("./routes/stats"));
+app.use("/api/admin", require("./routes/admin"));
+
+// Manually trigger a sync from the Admin panel
+app.post("/api/sync", authenticateToken, async (req, res) => {
+  try {
+    const result = await db.query(
+      "SELECT role FROM users WHERE user_id = $1",
+      [req.user.user_id]
+    );
+
+    if (result.rows[0]?.role !== "admin") {
+      return res.status(403).json({ ok: false, error: "Admin access required" });
+    }
+
+    if (isSeeding) {
+      return res.status(409).json({ ok: false, error: "Sync already running" });
+    }
+
+    runSeedGames();
+    res.json({ ok: true, message: "Sync started" });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
 
 app.listen(3000, () => console.log("Running on http://localhost:3000"));
