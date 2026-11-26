@@ -118,6 +118,7 @@
   flex-direction: column;
   gap: 5px;
   min-width: 0;
+  flex: 1;
 }
 
 .notification-message {
@@ -160,6 +161,30 @@
   margin: 0;
 }
 
+/* Delete button */
+.notification-delete {
+  background: transparent;
+  border: 1px solid var(--danger, #c0392b);
+  color: var(--danger, #c0392b);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.2s ease;
+}
+
+.notification-delete:hover {
+  background: rgba(192, 57, 43, 0.1);
+}
+
+.notification-delete:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* Mobile */
 @media (max-width: 600px) {
   .notifications-page {
@@ -177,5 +202,9 @@
 
   .notification-message {
     font-size: 14px;
+  }
+
+  .notification-delete {
+    padding: 6px 10px;
   }
 }

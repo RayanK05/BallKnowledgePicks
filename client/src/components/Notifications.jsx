@@ -37,12 +37,26 @@ function Notifications(){
       load();
     },[token]);
 
+    const deleteNotification = async (notification_id) => {
+        try {
+            const res = await fetch(`/api/notifications/${notification_id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) throw new Error("Failed to delete notification");
+
+            // remove it from the list without refetching
+            setNotifications((prev) =>
+            prev.filter((n) => n.notification_id !== notification_id)
+            );
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     const describe = (n) => {
         const opponent = n.followed_team === n.home_team ? n.away_team : n.home_team;
 
-        // if (n.alert_type === "game_day") {
-        // return `${n.followed_team} play ${opponent} today`;
-        // }
         const result = n.alert_type === "win" ? "beat" : "lost to";
         return `${n.followed_team} ${result} ${opponent}, ${n.home_score}-${n.away_score}`;
     };
@@ -75,8 +89,8 @@ function Notifications(){
             <div className="notification-list">
             {notifications.map((n) => (
                 <div
-                className="notification-card"
-                key={n.notification_id}
+                    className="notification-card"
+                    key={n.notification_id}
                 >
                 <div className="notification-icon">
                     🔔
@@ -84,16 +98,12 @@ function Notifications(){
 
                 <div className="notification-details">
                     <div className="notification-message">
-                    {describe(n)}
+                        {describe(n)}
                     </div>
-
-                    {/* <span className="notification-time">
-                    {new Date(n.created_at).toLocaleString()}
-                    </span> */}
                 </div>
-                <div>
-                    <button>delete notification</button>
-                </div>
+                    <button type="button" className="notification-delete" onClick={() => deleteNotification(n.notification_id)}>
+                        Delete
+                    </button>
                 </div>
             ))}
             </div>
