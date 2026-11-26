@@ -1,0 +1,47 @@
+.team {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 14px;
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.team:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.team:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.picked {
+  background: var(--accent-soft);
+  border: 2px solid var(--accent);
+}
+
+.name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.side {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.picked .side {
+  color: var(--accent-text);
+  font-weight: 600;
+}

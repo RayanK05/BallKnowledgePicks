@@ -1,33 +1,40 @@
-.result {
+.matchup {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
-.score {
-  font-weight: 600;
-}
-
-.badge {
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.correct {
-  background: var(--success-bg);
-  color: var(--success);
-}
-
-.wrong {
-  background: var(--danger-bg);
-  color: var(--danger);
-}
-
-.noPick {
-  background: var(--raised);
+.at {
   color: var(--subtle);
+  font-weight: 600;
+}
+
+.actions {
+  min-width: 100px;
+  text-align: right;
+}
+
+.remove {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.remove:hover {
+  text-decoration: underline;
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: var(--subtle);
+}
+
+@media (max-width: 700px) {
+  .matchup {
+    flex-wrap: wrap;
+  }
 }
