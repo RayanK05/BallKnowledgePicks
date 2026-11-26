@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const db = require("./db");
-const { authenticateToken } = require("./authenticateToken");
+const authenticateToken  = require("./authenticateToken");
 const app = express();
 app.use(express.json());
 const http = require("http");
