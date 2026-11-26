@@ -1,42 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800;900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800;900&display=swap");
 
 /* ===== Design tokens: Egg Liqueur (light, sandy hardwood) ===== */
 :root {
   color-scheme: light;
 
   /* surfaces */
-  --bg: #DFCBAE;            /* egg liqueur: page background */
-  --card: #F5E2CC;          /* honey beige: cards, navbar */
-  --raised: #EBD6BB;        /* inputs on cards, pick buttons, table headers, hover */
-  --input-bg: #FBF1E4;      /* lighter so fields stand out on cards */
-  --border: #CBB493;        /* card borders, dividers */
-  --border-strong: #9C8462; /* input + ghost-button outlines */
+  --bg: #dfcbae; /* egg liqueur: page background */
+  --card: #f5e2cc; /* honey beige: cards, navbar */
+  --raised: #ebd6bb; /* inputs on cards, pick buttons, table headers, hover */
+  --input-bg: #fbf1e4; /* lighter so fields stand out on cards */
+  --border: #cbb493; /* card borders, dividers */
+  --border-strong: #9c8462; /* input + ghost-button outlines */
 
   /* accent */
-  --accent: #FF4F00;                    /* buttons, active tab, your pick border */
-  --accent-hover: #E04500;              /* darker on hover (light theme) */
-  --accent-text: #9A3B12;               /* NEW: orange-family text on sand */
-  --accent-soft: #F8D9C8;               /* "your pick" bg, chips */
+  --accent: #ff4f00; /* buttons, active tab, your pick border */
+  --accent-hover: #e04500; /* darker on hover (light theme) */
+  --accent-text: #9a3b12; /* NEW: orange-family text on sand */
+  --accent-soft: #f8d9c8; /* "your pick" bg, chips */
   --accent-line: rgba(255, 79, 0, 0.45);
   --accent-glow: rgba(255, 79, 0, 0.14);
-  --on-accent: #161415;                 /* dynamic black on orange */
+  --on-accent: #161415; /* dynamic black on orange */
 
   /* text */
-  --text: #161415;          /* dynamic black */
-  --muted: #5E4C38;         /* helper text, labels */
-  --subtle: #6E5A45;        /* timestamps; on cards only */
-  --placeholder: #7A6650;
+  --text: #161415; /* dynamic black */
+  --muted: #5e4c38; /* helper text, labels */
+  --subtle: #6e5a45; /* timestamps; on cards only */
+  --placeholder: #7a6650;
 
   /* status */
-  --success: #17663F;
-  --success-bg: #D3EBD9;
-  --danger: #B3261E;
-  --danger-bg: #F6D5CF;
+  --success: #17663f;
+  --success-bg: #d3ebd9;
+  --danger: #b3261e;
+  --danger-bg: #f6d5cf;
 
   /* shape + type */
   --radius: 12px;
-  --font-body: 'Jost', system-ui, -apple-system, sans-serif;
-  --font-display: 'Jost', system-ui, sans-serif;
+  --font-body: "Jost", system-ui, -apple-system, sans-serif;
+  --font-display: "Jost", system-ui, sans-serif;
 }
 
 /* ===== Reset ===== */
@@ -49,7 +49,13 @@
 }
 
 body {
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: url("./assets/court.svg");
+  background-repeat: no-repeat;
+  background-position: center 120px;
+  background-size: min(1200px, 94vw) auto;
+  background-attachment: fixed;
+
   color: var(--text);
   font-family: var(--font-body);
   line-height: 1.5;
