@@ -579,5 +579,3 @@ app.post("/api/sync", authenticateToken, async (req, res) => {
     res.status(500).json({ ok: false, error: err.message });
   }
 });
-
-app.listen(3000, () => console.log("Running on http://localhost:3000"));
