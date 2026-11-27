@@ -107,7 +107,7 @@ function Teams(){
         const search = teamSearch.toLowerCase().trim();
 
         return (
-            team.team_name.toLowerCase().includes(search)
+            team.team_name.toLowerCase().includes(search) 
         );
     });
 
@@ -167,7 +167,7 @@ function Teams(){
 
                                 <div className="team-info">
                                     <div className="team-logo">
-                                        {"PLH"}
+                                        {team.team_name.replace(/\s/g, "").toUpperCase().slice(0, 3)}
                                     </div>
 
                                     <div>
