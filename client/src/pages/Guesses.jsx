@@ -130,7 +130,7 @@ const Guesses = () => {
 
   return (
     <div className={styles.page}>
-      <h1 className={styles.title}> Games & Pick'em ({games.length})</h1>
+      <h1 className={styles.title}> Games & Pick'em </h1>
       <h2 className={styles.subtitle}>Pick the winner before tipoff</h2>
       {stats && <ScoreSummary stats={stats} />}
       <FilterBar
